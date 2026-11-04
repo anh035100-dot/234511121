@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CloudGallery</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         * {
             box-sizing: border-box;
@@ -98,6 +101,7 @@
         .photo p {
             padding: 12px;
             font-size: 14px;
+            overflow-wrap: anywhere;
         }
 
         #status {
@@ -109,6 +113,11 @@
             text-align: center;
             padding: 30px;
             color: #94a3b8;
+        }
+
+        input {
+            max-width: 100%;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -129,10 +138,14 @@
     <section class="upload">
         <h2>Upload your images</h2>
         <p>Choose images from your device.</p>
+
         <input type="file" id="fileInput" accept="image/*" multiple>
+
         <br>
+
         <button onclick="uploadImages()">Upload Images</button>
-        <p id="status">Ready to upload.</p>
+
+        <p id="status">Connecting to CloudGallery...</p>
     </section>
 
     <h2 style="margin-bottom:20px;">Explore Gallery</h2>
@@ -144,11 +157,150 @@
 </footer>
 
 <script>
-    // Cloud storage will be connected in the next step.
-    function uploadImages() {
-        document.getElementById("status").textContent =
-            "Cloud storage setup is coming next!";
+    // Supabase configuration
+    const SUPABASE_URL =
+        "https://pfmwnzarkxzywqlbktfr.supabase.co";
+
+    const SUPABASE_KEY =
+        "sb_publishable_KqJjz8dff0SV-edCQTid4Q_1OGn5FC9";
+
+    const db = supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+    const BUCKET = "gallery";
+
+    // Load stored images
+    async function loadGallery() {
+        const gallery = document.getElementById("gallery");
+
+        gallery.innerHTML = "<p>Loading images...</p>";
+
+        const { data, error } = await db.storage
+            .from(BUCKET)
+            .list("", {
+                limit: 100,
+                sortBy: {
+                    column: "created_at",
+                    order: "desc"
+                }
+            });
+
+        if (error) {
+            gallery.innerHTML = "<p>Unable to load gallery: " +
+                error.message + "</p>";
+            return;
+        }
+
+        gallery.innerHTML = "";
+
+        const files = data.filter(file =>
+            file.name !== ".emptyFolderPlaceholder"
+        );
+
+        for (const file of files) {
+            const { data: urlData } = db.storage
+                .from(BUCKET)
+                .getPublicUrl(file.name);
+
+            const card = document.createElement("div");
+            card.className = "photo";
+
+            const img = document.createElement("img");
+            img.src = urlData.publicUrl;
+            img.alt = file.name;
+            img.loading = "lazy";
+
+            const name = document.createElement("p");
+            name.textContent = file.name;
+
+            const share = document.createElement("button");
+            share.textContent = "Copy Image Link";
+
+            share.onclick = async () => {
+                try {
+                    await navigator.clipboard.writeText(
+                        urlData.publicUrl
+                    );
+                    share.textContent = "Copied!";
+                } catch {
+                    prompt("Copy this image link:", urlData.publicUrl);
+                }
+            };
+
+            card.appendChild(img);
+            card.appendChild(name);
+            card.appendChild(share);
+
+            gallery.appendChild(card);
+        }
+
+        if (files.length === 0) {
+            gallery.innerHTML =
+                "<p>No images yet. Upload your first photo!</p>";
+        }
     }
+
+    // Upload images to Supabase
+    async function uploadImages() {
+        const input = document.getElementById("fileInput");
+        const status = document.getElementById("status");
+
+        const files = Array.from(input.files);
+
+        if (files.length === 0) {
+            status.textContent = "Please select an image first.";
+            return;
+        }
+
+        for (const file of files) {
+
+            if (!file.type.startsWith("image/")) {
+                status.textContent = "Invalid image file.";
+                continue;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                status.textContent =
+                    file.name + " exceeds the 5 MB limit.";
+                continue;
+            }
+
+            status.textContent = "Uploading " + file.name + "...";
+
+            const safeName = file.name.replace(
+                /[^a-zA-Z0-9._-]/g, "_"
+            );
+
+            const path =
+                Date.now() + "-" +
+                crypto.randomUUID() + "-" +
+                safeName;
+
+            const { error } = await db.storage
+                .from(BUCKET)
+                .upload(path, file, {
+                    contentType: file.type,
+                    upsert: false
+                });
+
+            if (error) {
+                status.textContent =
+                    "Upload failed: " + error.message;
+                return;
+            }
+        }
+
+        status.textContent = "All images uploaded successfully!";
+
+        input.value = "";
+
+        await loadGallery();
+    }
+
+    // Start gallery
+    loadGallery();
 </script>
 
 </body>
