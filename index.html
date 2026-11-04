@@ -32,8 +32,10 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .photo{background:white;border:1px solid #e7eaf1;border-radius:14px;overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,0.02);position:relative}
 .photo-image{width:100%;height:220px;object-fit:cover;display:block;background:#eee}
 .photo-body{padding:13px}
-.photo-user{display:flex;align-items:center;gap:9px;margin-bottom:10px;font-size:13px}
+.photo-user{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:13px}
+.photo-user-left{display:flex;align-items:center;gap:9px}
 .photo-user .avatar{width:29px;height:29px}
+.privacy-badge{font-size:11px;padding:3px 7px;border-radius:6px;background:#f1f5f9;color:#475569;font-weight:600}
 .caption{margin:10px 0;overflow-wrap:anywhere}
 .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .like{background:#fff0f3;color:#d33b65;padding:8px 12px}
@@ -109,7 +111,15 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
     <p class="muted">Share your photos with the CloudGallery community.</p>
     <input type="file" id="fileInput" accept="image/*" style="margin-top:15px">
     <input id="captionInput" maxlength="300" placeholder="Write a caption (optional)" style="margin-top:12px">
-    <button id="uploadButton" style="margin-top:12px">Upload image</button>
+    
+    <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Privacy setting</label>
+    <select id="privacyInput" style="margin-top:5px">
+      <option value="public">🌐 Public (Everyone)</option>
+      <option value="friends">👥 Friends only</option>
+      <option value="private">🔒 Private (Only me)</option>
+    </select>
+
+    <button id="uploadButton" style="margin-top:15px">Upload image</button>
     <p id="uploadStatus" class="status"></p>
   </section>
 
@@ -135,7 +145,7 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
     <input id="displayName" maxlength="40" placeholder="Your display name" style="margin:8px 0 12px">
     <button id="saveProfileButton">Save profile</button>
     <p id="profileStatus" class="status"></p>
-    <h3 style="margin-top:25px">My public photos</h3>
+    <h3 style="margin-top:25px">My photos</h3>
     <div id="profileGallery" class="gallery" style="margin-top:15px"></div>
   </section>
 </main>
@@ -339,8 +349,7 @@ async function loadPosts(targetId, ownOnly = false) {
   target.innerHTML = '<div class="empty">Loading images...</div>';
 
   let query = db.from("posts")
-    .select("id,user_id,image_url,storage_path,caption,created_at")
-    .eq("is_public", true)
+    .select("id,user_id,image_url,storage_path,caption,privacy,created_at")
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -350,6 +359,13 @@ async function loadPosts(targetId, ownOnly = false) {
       return;
     }
     query = query.eq("user_id", currentUser.id);
+  } else {
+    // For public explore feed: show public photos, or friends-only photos if logged in
+    if (currentUser) {
+      query = query.in("privacy", ["public", "friends"]);
+    } else {
+      query = query.eq("privacy", "public");
+    }
   }
 
   const { data: posts, error } = await query;
@@ -362,7 +378,7 @@ async function loadPosts(targetId, ownOnly = false) {
 
   if (!posts?.length) {
     target.innerHTML = ownOnly
-      ? '<div class="empty">You have not uploaded any public images yet.</div>'
+      ? '<div class="empty">You have not uploaded any images yet.</div>'
       : '<div class="empty">No public images yet. Be the first to upload!</div>';
     return;
   }
@@ -406,6 +422,13 @@ async function loadPosts(targetId, ownOnly = false) {
     const postComments = (comments || []).filter(c => c.post_id === post.id);
     const isOwner = currentUser && String(post.user_id) === String(currentUser.id);
 
+    const privacyIconMap = {
+      public: "🌐 Public",
+      friends: "👥 Friends",
+      private: "🔒 Private"
+    };
+    const privacyBadgeText = privacyIconMap[post.privacy] || "🌐 Public";
+
     return `
       <article class="photo">
         <img class="photo-image"
@@ -414,9 +437,12 @@ async function loadPosts(targetId, ownOnly = false) {
 
         <div class="photo-body">
           <div class="photo-user">
-            <img class="avatar"
-              src="${escapeHTML(profile.avatar_url || fallbackAvatar)}" alt="Avatar">
-            <strong>${escapeHTML(profile.display_name || "CloudGallery user")}</strong>
+            <div class="photo-user-left">
+              <img class="avatar"
+                src="${escapeHTML(profile.avatar_url || fallbackAvatar)}" alt="Avatar">
+              <strong>${escapeHTML(profile.display_name || "CloudGallery user")}</strong>
+            </div>
+            <span class="privacy-badge">${privacyBadgeText}</span>
           </div>
 
           ${post.caption ? `<p class="caption">${escapeHTML(post.caption)}</p>` : ""}
@@ -551,6 +577,7 @@ async function uploadImage() {
 
   const file = $("fileInput").files[0];
   const caption = $("captionInput").value.trim();
+  const privacy = $("privacyInput").value || "public";
 
   if (!file) {
     $("uploadStatus").textContent = "Choose an image first.";
@@ -591,7 +618,8 @@ async function uploadImage() {
     image_url: publicData.publicUrl,
     storage_path: path,
     caption,
-    is_public: true
+    privacy,
+    is_public: privacy === "public"
   });
 
   if (postError) {
@@ -599,6 +627,7 @@ async function uploadImage() {
   } else {
     $("fileInput").value = "";
     $("captionInput").value = "";
+    $("privacyInput").value = "public";
     $("uploadStatus").textContent = "Your image is now live!";
     await loadPosts("myGallery", true);
   }
