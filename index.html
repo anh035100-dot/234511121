@@ -1,4 +1,4 @@
-
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -61,27 +61,58 @@
             border-radius: 16px;
             padding: 50px 20px;
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 50px;
         }
 
         button {
             background: #536dfe;
             color: white;
             border: none;
-            padding: 13px 25px;
+            padding: 12px 20px;
             border-radius: 9px;
             cursor: pointer;
-            margin-top: 18px;
-            font-size: 15px;
+            margin-top: 15px;
+            font-size: 14px;
         }
 
         button:hover {
             background: #4055d6;
         }
 
+        input {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+
+        #status {
+            margin-top: 15px;
+            color: #64748b;
+        }
+
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 22px;
+        }
+
+        .gallery-header h2 {
+            font-size: 26px;
+        }
+
+        #gallery-status {
+            color: #64748b;
+            margin-bottom: 20px;
+        }
+
         #gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            grid-template-columns: repeat(
+                auto-fill,
+                minmax(220px, 1fr)
+            );
             gap: 20px;
         }
 
@@ -96,6 +127,13 @@
             width: 100%;
             height: 210px;
             object-fit: cover;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .photo img:hover {
+            transform: scale(1.03);
         }
 
         .photo p {
@@ -104,9 +142,17 @@
             overflow-wrap: anywhere;
         }
 
-        #status {
-            margin-top: 15px;
+        .photo button {
+            margin: 0 12px 12px;
+        }
+
+        .empty {
+            background: white;
+            border-radius: 12px;
+            padding: 35px;
+            text-align: center;
             color: #64748b;
+            grid-column: 1 / -1;
         }
 
         footer {
@@ -115,9 +161,22 @@
             color: #94a3b8;
         }
 
-        input {
-            max-width: 100%;
-            margin-top: 20px;
+        @media (max-width: 600px) {
+            main {
+                margin: 30px auto;
+            }
+
+            .hero h2 {
+                font-size: 28px;
+            }
+
+            header {
+                padding: 18px 5%;
+            }
+
+            .gallery-header h2 {
+                font-size: 22px;
+            }
         }
     </style>
 </head>
@@ -130,26 +189,50 @@
 </header>
 
 <main>
+
     <section class="hero">
         <h2>Your photos, everywhere.</h2>
         <p>Upload, store and share your favorite memories.</p>
     </section>
 
+    <!-- IMAGE UPLOAD -->
+
     <section class="upload">
         <h2>Upload your images</h2>
         <p>Choose images from your device.</p>
 
-        <input type="file" id="fileInput" accept="image/*" multiple>
+        <input
+            type="file"
+            id="fileInput"
+            accept="image/*"
+            multiple
+        >
 
         <br>
 
-        <button onclick="uploadImages()">Upload Images</button>
+        <button onclick="uploadImages()">
+            Upload Images
+        </button>
 
         <p id="status">Connecting to CloudGallery...</p>
     </section>
 
-    <h2 style="margin-bottom:20px;">Explore Gallery</h2>
-    <section id="gallery"></section>
+    <!-- MY ONLINE GALLERY -->
+
+    <section>
+        <div class="gallery-header">
+            <h2>🖼️ My Online Gallery</h2>
+
+            <button onclick="loadGallery()">
+                ↻ Refresh Gallery
+            </button>
+        </div>
+
+        <p id="gallery-status">Loading images...</p>
+
+        <section id="gallery"></section>
+    </section>
+
 </main>
 
 <footer>
@@ -157,107 +240,172 @@
 </footer>
 
 <script>
-    // Supabase configuration
+    // SUPABASE CONFIGURATION
+
     const SUPABASE_URL =
         "https://pfmwnzarkxzywqlbktfr.supabase.co";
 
     const SUPABASE_KEY =
-        "sb_publishable_KqJjz8dff0SV-edCQTid4Q_1OGn5FC9";
-
-   const db = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+    "sb_publishable_KqJjz8dff0SV-edCQTid4Q_1OGn5FC9";
+    
+    const db = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
 
     const BUCKET = "gallery";
 
-    // Load stored images
+
+    // LOAD ALL PUBLISHED IMAGES
+
     async function loadGallery() {
+
         const gallery = document.getElementById("gallery");
-
-        gallery.innerHTML = "<p>Loading images...</p>";
-
-        const { data, error } = await db.storage
-            .from(BUCKET)
-            .list("", {
-                limit: 100,
-                sortBy: {
-                    column: "created_at",
-                    order: "desc"
-                }
-            });
-
-        if (error) {
-            gallery.innerHTML = "<p>Unable to load gallery: " +
-                error.message + "</p>";
-            return;
-        }
+        const galleryStatus =
+            document.getElementById("gallery-status");
 
         gallery.innerHTML = "";
+        galleryStatus.textContent = "Loading images...";
 
-        const files = data.filter(file =>
-            file.name !== ".emptyFolderPlaceholder"
-        );
+        try {
 
-        for (const file of files) {
-            const { data: urlData } = db.storage
-                .from(BUCKET)
-                .getPublicUrl(file.name);
+            let allFiles = [];
+            let offset = 0;
+            const batchSize = 1000;
 
-            const card = document.createElement("div");
-            card.className = "photo";
+            while (true) {
 
-            const img = document.createElement("img");
-            img.src = urlData.publicUrl;
-            img.alt = file.name;
-            img.loading = "lazy";
+                const { data, error } = await db.storage
+                    .from(BUCKET)
+                    .list("", {
+                        limit: batchSize,
+                        offset: offset,
+                        sortBy: {
+                            column: "created_at",
+                            order: "desc"
+                        }
+                    });
 
-            const name = document.createElement("p");
-            name.textContent = file.name;
+                if (error) throw error;
 
-            const share = document.createElement("button");
-            share.textContent = "Copy Image Link";
+                allFiles.push(...data);
 
-            share.onclick = async () => {
-                try {
-                    await navigator.clipboard.writeText(
-                        urlData.publicUrl
+                if (data.length < batchSize) break;
+
+                offset += batchSize;
+            }
+
+            const files = allFiles.filter(file =>
+                file.name &&
+                file.name !== ".emptyFolderPlaceholder"
+            );
+
+            if (files.length === 0) {
+                gallery.innerHTML = `
+                    <div class="empty">
+                        <h3>No images yet!</h3>
+                        <p>Upload your first photo to get started.</p>
+                    </div>
+                `;
+
+                galleryStatus.textContent = "0 images published.";
+                return;
+            }
+
+            for (const file of files) {
+
+                const { data: urlData } = db.storage
+                    .from(BUCKET)
+                    .getPublicUrl(file.name);
+
+                const card = document.createElement("div");
+                card.className = "photo";
+
+                const img = document.createElement("img");
+
+                img.src = urlData.publicUrl;
+                img.alt = file.name;
+                img.loading = "lazy";
+
+                // Click to view full image
+
+                img.onclick = () => {
+                    window.open(
+                        urlData.publicUrl,
+                        "_blank"
                     );
-                    share.textContent = "Copied!";
-                } catch {
-                    prompt("Copy this image link:", urlData.publicUrl);
-                }
-            };
+                };
 
-            card.appendChild(img);
-            card.appendChild(name);
-            card.appendChild(share);
+                const name = document.createElement("p");
+                name.textContent = file.name;
 
-            gallery.appendChild(card);
-        }
+                const share = document.createElement("button");
+                share.textContent = "Copy Image Link";
 
-        if (files.length === 0) {
-            gallery.innerHTML =
-                "<p>No images yet. Upload your first photo!</p>";
+                share.onclick = async () => {
+
+                    try {
+                        await navigator.clipboard.writeText(
+                            urlData.publicUrl
+                        );
+
+                        share.textContent = "Copied!";
+
+                    } catch {
+                        prompt(
+                            "Copy this image link:",
+                            urlData.publicUrl
+                        );
+                    }
+                };
+
+                card.appendChild(img);
+                card.appendChild(name);
+                card.appendChild(share);
+
+                gallery.appendChild(card);
+            }
+
+            galleryStatus.textContent =
+                `Showing ${files.length} published images.`;
+
+        } catch (error) {
+
+            console.error("Gallery error:", error);
+
+            galleryStatus.textContent =
+                "Unable to load images: " + error.message;
+
+            gallery.innerHTML = `
+                <div class="empty">
+                    Please check your Supabase permissions
+                    and bucket settings.
+                </div>
+            `;
         }
     }
 
-    // Upload images to Supabase
+
+    // UPLOAD IMAGES TO SUPABASE
+
     async function uploadImages() {
+
         const input = document.getElementById("fileInput");
         const status = document.getElementById("status");
 
         const files = Array.from(input.files);
 
         if (files.length === 0) {
-            status.textContent = "Please select an image first.";
+            status.textContent =
+                "Please select an image first.";
             return;
         }
 
         for (const file of files) {
 
             if (!file.type.startsWith("image/")) {
-                status.textContent = "Invalid image file.";
+                status.textContent =
+                    "Invalid image file: " + file.name;
                 continue;
             }
 
@@ -267,10 +415,12 @@
                 continue;
             }
 
-            status.textContent = "Uploading " + file.name + "...";
+            status.textContent =
+                "Uploading " + file.name + "...";
 
             const safeName = file.name.replace(
-                /[^a-zA-Z0-9._-]/g, "_"
+                /[^a-zA-Z0-9._-]/g,
+                "_"
             );
 
             const path =
@@ -286,22 +436,31 @@
                 });
 
             if (error) {
+
                 status.textContent =
                     "Upload failed: " + error.message;
+
                 return;
             }
         }
 
-        status.textContent = "All images uploaded successfully!";
+        status.textContent =
+            "All images uploaded successfully!";
 
         input.value = "";
+
+        // Automatically refresh gallery
 
         await loadGallery();
     }
 
-    // Start gallery
+
+    // START GALLERY
+
     loadGallery();
-</script> 
+
+</script>
 
 </body>
 </html>
+```
