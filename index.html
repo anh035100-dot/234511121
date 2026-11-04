@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudGallery</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            color: #182230;
+        }
+
+        header {
+            background: white;
+            padding: 22px 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        header h1 {
+            color: #536dfe;
+            font-size: 25px;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 60px auto;
+            padding: 20px;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .hero h2 {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .hero p {
+            color: #64748b;
+        }
+
+        .upload {
+            background: white;
+            border: 2px dashed #a5b4fc;
+            border-radius: 16px;
+            padding: 50px 20px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        button {
+            background: #536dfe;
+            color: white;
+            border: none;
+            padding: 13px 25px;
+            border-radius: 9px;
+            cursor: pointer;
+            margin-top: 18px;
+            font-size: 15px;
+        }
+
+        button:hover {
+            background: #4055d6;
+        }
+
+        #gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .photo {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 3px 12px #0000000d;
+        }
+
+        .photo img {
+            width: 100%;
+            height: 210px;
+            object-fit: cover;
+        }
+
+        .photo p {
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        #status {
+            margin-top: 15px;
+            color: #64748b;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>☁ CloudGallery</h1>
+    <span>My Online Gallery</span>
+</header>
+
+<main>
+    <section class="hero">
+        <h2>Your photos, everywhere.</h2>
+        <p>Upload, store and share your favorite memories.</p>
+    </section>
+
+    <section class="upload">
+        <h2>Upload your images</h2>
+        <p>Choose images from your device.</p>
+        <input type="file" id="fileInput" accept="image/*" multiple>
+        <br>
+        <button onclick="uploadImages()">Upload Images</button>
+        <p id="status">Ready to upload.</p>
+    </section>
+
+    <h2 style="margin-bottom:20px;">Explore Gallery</h2>
+    <section id="gallery"></section>
+</main>
+
+<footer>
+    © 2026 CloudGallery · Your memories in the cloud.
+</footer>
+
+<script>
+    // Cloud storage will be connected in the next step.
+    function uploadImages() {
+        document.getElementById("status").textContent =
+            "Cloud storage setup is coming next!";
+    }
+</script>
+
+</body>
+</html>
