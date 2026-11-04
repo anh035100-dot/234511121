@@ -12,8 +12,8 @@ body{font-family:Arial,sans-serif;background:#f5f7fb;color:#182230}
 button{border:0;border-radius:10px;padding:11px 17px;background:#536dfe;color:white;cursor:pointer;font-weight:600;transition:background 0.2s}
 button:hover{background:#4055d6}
 button:disabled{opacity:.5;cursor:not-allowed}
-input,textarea{font:inherit;border:1px solid #dfe3ed;border-radius:9px;padding:12px;width:100%;outline:none}
-input:focus,textarea:focus{border-color:#536dfe}
+input,textarea,select{font:inherit;border:1px solid #dfe3ed;border-radius:9px;padding:12px;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:#536dfe}
 header{background:white;padding:17px 6%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:5}
 header h1{color:#536dfe;font-size:25px}
 .header-right{display:flex;align-items:center;gap:12px}
@@ -28,17 +28,19 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .tab{background:transparent;color:#68738a}
 .tab.active{background:#e9ecff;color:#4055d6}
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
-.photo{background:white;border:1px solid #e7eaf1;border-radius:14px;overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,0.02)}
+.photo{background:white;border:1px solid #e7eaf1;border-radius:14px;overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,0.02);position:relative}
 .photo-image{width:100%;height:220px;object-fit:cover;display:block;background:#eee}
 .photo-body{padding:13px}
 .photo-user{display:flex;align-items:center;gap:9px;margin-bottom:10px;font-size:13px}
 .photo-user .avatar{width:29px;height:29px}
 .caption{margin:10px 0;overflow-wrap:anywhere}
-.actions{display:flex;gap:8px;margin-top:12px}
+.actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .like{background:#fff0f3;color:#d33b65;padding:8px 12px}
 .like:hover{background:#ffe1e7}
 .like.liked{background:#ffdce6;color:#b01d46}
 .comment-button{background:#eef0ff;color:#4055d6;padding:8px 12px;cursor:default}
+.delete-btn{background:#fee2e2;color:#dc2626;padding:8px 12px}
+.delete-btn:hover{background:#fca5a5}
 .comments{border-top:1px solid #eee;margin-top:12px;padding-top:10px}
 .comment{font-size:13px;margin:8px 0;overflow-wrap:anywhere}
 .comment-form{display:flex;gap:6px;margin-top:10px}
@@ -286,7 +288,7 @@ async function loadPosts(targetId, ownOnly = false) {
   target.innerHTML = '<div class="empty">Loading images...</div>';
 
   let query = db.from("posts")
-    .select("id,user_id,image_url,caption,created_at")
+    .select("id,user_id,image_url,storage_path,caption,created_at")
     .eq("is_public", true)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -351,6 +353,7 @@ async function loadPosts(targetId, ownOnly = false) {
     const postLikes = (likes || []).filter(l => l.post_id === post.id);
     const liked = currentUser && postLikes.some(l => l.user_id === currentUser.id);
     const postComments = (comments || []).filter(c => c.post_id === post.id);
+    const isOwner = currentUser && String(post.user_id) === String(currentUser.id);
 
     return `
       <article class="photo">
@@ -375,6 +378,7 @@ async function loadPosts(targetId, ownOnly = false) {
             <button class="comment-button">
               Comments (${postComments.length})
             </button>
+            ${isOwner ? `<button class="delete-btn" data-delete-id="${post.id}" data-storage-path="${escapeHTML(post.storage_path || '')}">🗑 Delete</button>` : ""}
           </div>
 
           <div class="comments">
@@ -403,11 +407,52 @@ async function loadPosts(targetId, ownOnly = false) {
     );
   });
 
+  target.querySelectorAll("[data-delete-id]").forEach(button => {
+    button.addEventListener("click", () =>
+      deletePost(button.dataset.deleteId, button.dataset.storagePath, targetId, ownOnly)
+    );
+  });
+
   target.querySelectorAll("[data-comment-form]").forEach(form => {
     form.addEventListener("submit", event =>
       addComment(event, Number(form.dataset.commentForm), targetId, ownOnly)
     );
   });
+}
+
+async function deletePost(postId, storagePath, targetId, ownOnly) {
+  if (!currentUser) return showLogin();
+
+  const confirmDelete = confirm("Are you sure you want to delete this photo?");
+  if (!confirmDelete) return;
+
+  try {
+    const { error: dbError } = await db.from("posts")
+      .delete()
+      .eq("id", postId)
+      .eq("user_id", currentUser.id);
+
+    if (dbError) {
+      alert("Database delete failed: " + dbError.message);
+      return;
+    }
+
+    if (storagePath) {
+      const { error: storageError } = await db.storage
+        .from(BUCKET)
+        .remove([storagePath]);
+
+      if (storageError) {
+        console.warn("Storage cleanup notice:", storageError.message);
+      }
+    }
+
+    alert("Photo deleted successfully!");
+    await loadPosts(targetId, ownOnly);
+
+  } catch (err) {
+    alert("Error deleting photo: " + err.message);
+  }
 }
 
 async function toggleLike(postId, targetId, ownOnly) {
