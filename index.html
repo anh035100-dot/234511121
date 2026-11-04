@@ -1,4 +1,4 @@
-```html
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -195,8 +195,6 @@
         <p>Upload, store and share your favorite memories.</p>
     </section>
 
-    <!-- IMAGE UPLOAD -->
-
     <section class="upload">
         <h2>Upload your images</h2>
         <p>Choose images from your device.</p>
@@ -216,8 +214,6 @@
 
         <p id="status">Connecting to CloudGallery...</p>
     </section>
-
-    <!-- MY ONLINE GALLERY -->
 
     <section>
         <div class="gallery-header">
@@ -246,80 +242,126 @@
         "https://pfmwnzarkxzywqlbktfr.supabase.co";
 
     const SUPABASE_KEY =
-    "sb_publishable_KqJjz8dff0SV-edCQTid4Q_1OGn5FC9";
-    
-   const db = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+        "sb_publishable_KqJjz8dff0SV-edCQTid4Q_1OGn5FC9";
 
-const BUCKET = "gallery";
+    const BUCKET = "gallery";
 
-document.getElementById("status").textContent =
-    "Ready! Select images to upload.";
+    const db = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+    document.getElementById("status").textContent =
+        "Ready! Select images to upload.";
+
+
+    // GET FILES FROM A FOLDER, INCLUDING SUBFOLDERS
+
+    async function getAllImages(folder = "") {
+
+        let images = [];
+        let offset = 0;
+        const batchSize = 1000;
+
+        while (true) {
+
+            const { data, error } = await db.storage
+                .from(BUCKET)
+                .list(folder, {
+                    limit: batchSize,
+                    offset: offset,
+                    sortBy: {
+                        column: "created_at",
+                        order: "desc"
+                    }
+                });
+
+            if (error) {
+                throw error;
+            }
+
+            for (const item of data) {
+
+                const path = folder
+                    ? folder + "/" + item.name
+                    : item.name;
+
+                // A folder has no file ID.
+                if (!item.id && !item.metadata) {
+                    const nestedImages =
+                        await getAllImages(path);
+
+                    images.push(...nestedImages);
+
+                } else {
+                    images.push({
+                        ...item,
+                        fullPath: path
+                    });
+                }
+            }
+
+            if (data.length < batchSize) {
+                break;
+            }
+
+            offset += batchSize;
+        }
+
+        return images;
+    }
 
 
     // LOAD ALL PUBLISHED IMAGES
 
     async function loadGallery() {
 
-        const gallery = document.getElementById("gallery");
+        const gallery =
+            document.getElementById("gallery");
+
         const galleryStatus =
             document.getElementById("gallery-status");
 
         gallery.innerHTML = "";
-        galleryStatus.textContent = "Loading images...";
+
+        galleryStatus.textContent =
+            "Loading images from Supabase...";
 
         try {
 
-            let allFiles = [];
-            let offset = 0;
-            const batchSize = 1000;
+            const files = await getAllImages();
 
-            while (true) {
+            console.log("Images found:", files);
 
-                const { data, error } = await db.storage
-                    .from(BUCKET)
-                    .list("", {
-                        limit: batchSize,
-                        offset: offset,
-                        sortBy: {
-                            column: "created_at",
-                            order: "desc"
-                        }
-                    });
-
-                if (error) throw error;
-
-                allFiles.push(...data);
-
-                if (data.length < batchSize) break;
-
-                offset += batchSize;
-            }
-
-            const files = allFiles.filter(file =>
-                file.name &&
-                file.name !== ".emptyFolderPlaceholder"
+            const images = files.filter(file =>
+                file.fullPath &&
+                /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif|heic)$/i
+                    .test(file.fullPath)
             );
 
-            if (files.length === 0) {
+            if (images.length === 0) {
+
                 gallery.innerHTML = `
                     <div class="empty">
-                        <h3>No images yet!</h3>
-                        <p>Upload your first photo to get started.</p>
+                        <h3>No images found!</h3>
+                        <p>
+                            Your gallery bucket is currently empty
+                            or contains no supported image files.
+                        </p>
                     </div>
                 `;
 
-                galleryStatus.textContent = "0 images published.";
+                galleryStatus.textContent =
+                    "0 images published.";
+
                 return;
             }
 
-            for (const file of files) {
+            for (const file of images) {
 
                 const { data: urlData } = db.storage
                     .from(BUCKET)
-                    .getPublicUrl(file.name);
+                    .getPublicUrl(file.fullPath);
 
                 const card = document.createElement("div");
                 card.className = "photo";
@@ -330,13 +372,16 @@ document.getElementById("status").textContent =
                 img.alt = file.name;
                 img.loading = "lazy";
 
-                // Click to view full image
-
                 img.onclick = () => {
                     window.open(
                         urlData.publicUrl,
                         "_blank"
                     );
+                };
+
+                img.onerror = () => {
+                    img.alt = "Image could not be displayed";
+                    img.style.objectFit = "contain";
                 };
 
                 const name = document.createElement("p");
@@ -370,19 +415,20 @@ document.getElementById("status").textContent =
             }
 
             galleryStatus.textContent =
-                `Showing ${files.length} published images.`;
+                `Showing ${images.length} published images.`;
 
         } catch (error) {
 
             console.error("Gallery error:", error);
 
             galleryStatus.textContent =
-                "Unable to load images: " + error.message;
+                "Error loading images: " + error.message;
 
             gallery.innerHTML = `
                 <div class="empty">
-                    Please check your Supabase permissions
-                    and bucket settings.
+                    <h3>Unable to load images</h3>
+                    <p>${error.message}</p>
+                    <p>Check your Supabase Storage policies.</p>
                 </div>
             `;
         }
@@ -393,28 +439,37 @@ document.getElementById("status").textContent =
 
     async function uploadImages() {
 
-        const input = document.getElementById("fileInput");
-        const status = document.getElementById("status");
+        const input =
+            document.getElementById("fileInput");
+
+        const status =
+            document.getElementById("status");
 
         const files = Array.from(input.files);
 
         if (files.length === 0) {
+
             status.textContent =
                 "Please select an image first.";
+
             return;
         }
 
         for (const file of files) {
 
             if (!file.type.startsWith("image/")) {
+
                 status.textContent =
                     "Invalid image file: " + file.name;
+
                 continue;
             }
 
             if (file.size > 5 * 1024 * 1024) {
+
                 status.textContent =
                     file.name + " exceeds the 5 MB limit.";
+
                 continue;
             }
 
@@ -452,8 +507,6 @@ document.getElementById("status").textContent =
 
         input.value = "";
 
-        // Automatically refresh gallery
-
         await loadGallery();
     }
 
@@ -466,4 +519,3 @@ document.getElementById("status").textContent =
 
 </body>
 </html>
-```
