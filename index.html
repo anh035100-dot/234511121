@@ -87,7 +87,6 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
       <h2>Your photos, everywhere.</h2>
       <p class="muted">Upload, store and share your favorite memories.</p>
     </div>
-    <button id="heroUpload">＋ Upload image</button>
   </section>
 
   <nav class="tabs">
@@ -577,10 +576,6 @@ $("signOutButton").addEventListener("click", async () => {
 });
 
 $("uploadButton").addEventListener("click", uploadImage);
-$("heroUpload").addEventListener("click", () => {
-  if (!currentUser) return showLogin();
-  $("uploadPanel").scrollIntoView({ behavior: "smooth" });
-});
 
 $("openExploreButton").addEventListener("click", openExplore);
 $("closeExploreButton").addEventListener("click", closeExplore);
