@@ -53,6 +53,7 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .modal{background:white;width:min(430px,100%);padding:25px;border-radius:18px}
 .modal h2{margin-bottom:10px}
 .google-button{background:white;color:#222;border:1px solid #ddd;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:20px}
+.google-button:hover{background:#f5f5f5}
 .google-button img{width:20px;height:20px}
 .explore-window{width:min(1200px,100%);height:92vh;overflow-y:auto;background:#f5f7fb;border-radius:18px;padding:22px}
 .explore-header{display:flex;justify-content:space-between;align-items:center;gap:15px;background:white;padding:16px;border-radius:12px;margin-bottom:20px;position:sticky;top:0;z-index:3}
@@ -131,15 +132,17 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 
 <footer>© 2026 CloudGallery · Your memories in the cloud.</footer>
 
-<!-- GOOGLE SIGN-IN -->
+<!-- GOOGLE SIGN-IN MODAL -->
 <div id="loginModal" class="modal-backdrop hidden">
   <div class="modal">
     <h2>Welcome to CloudGallery!</h2>
     <p class="muted">Sign in with Google to upload, like and comment on photos.</p>
+
     <button id="googleButton" class="google-button">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="">
       Continue with Google
     </button>
+
     <button id="closeLoginButton" style="width:100%;margin-top:12px;background:#eef0ff;color:#4055d6">Close</button>
     <p id="loginStatus" class="status"></p>
   </div>
@@ -188,18 +191,31 @@ function closeLogin() {
   $("loginModal").classList.add("hidden");
 }
 
+/* GOOGLE SIGN-IN */
 async function signInWithGoogle() {
+  $("googleButton").disabled = true;
   $("loginStatus").textContent = "Connecting to Google...";
-  const redirectTo = window.location.origin + window.location.pathname;
+
+  const redirectTo = "https://anh035100-dot.github.io/234511121/";
 
   const { error } = await db.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo }
+    options: {
+      redirectTo: redirectTo,
+      queryParams: {
+        access_type: "offline",
+        prompt: "select_account"
+      }
+    }
   });
 
-  if (error) $("loginStatus").textContent = error.message;
+  if (error) {
+    $("loginStatus").textContent = "Sign-in failed: " + error.message;
+    $("googleButton").disabled = false;
+  }
 }
 
+/* LOAD PROFILE */
 async function loadProfile() {
   if (!currentUser) return;
 
@@ -236,6 +252,7 @@ async function saveProfile() {
   if (!currentUser) return showLogin();
 
   const display_name = $("displayName").value.trim();
+
   if (!display_name) {
     $("profileStatus").textContent = "Please enter a display name.";
     return;
@@ -257,10 +274,11 @@ async function saveProfile() {
 
   if (!error) {
     await loadProfile();
-    await loadPosts();
+    await loadPosts("myGallery", true);
   }
 }
 
+/* LOAD POSTS */
 async function loadPosts(targetId, ownOnly = false) {
   const target = $(targetId);
   target.innerHTML = '<div class="empty">Loading images...</div>';
@@ -399,6 +417,7 @@ async function addComment(event, postId, targetId, ownOnly) {
   else await loadPosts(targetId, ownOnly);
 }
 
+/* UPLOAD IMAGE */
 async function uploadImage() {
   if (!currentUser) return showLogin();
 
@@ -459,6 +478,7 @@ async function uploadImage() {
   $("uploadButton").disabled = false;
 }
 
+/* EXPLORE */
 function openExplore() {
   $("exploreModal").classList.remove("hidden");
   document.body.style.overflow = "hidden";
@@ -470,8 +490,10 @@ function closeExplore() {
   document.body.style.overflow = "";
 }
 
+/* NAVIGATION */
 function setView(view) {
   activeView = view;
+
   document.querySelectorAll(".tab").forEach(tab =>
     tab.classList.toggle("active", tab.dataset.view === view)
   );
@@ -492,6 +514,7 @@ function setView(view) {
   }
 }
 
+/* AUTHENTICATION UI */
 async function updateAuthUI() {
   $("signInButton").classList.toggle("hidden", !!currentUser);
   $("signOutButton").classList.toggle("hidden", !currentUser);
@@ -504,6 +527,7 @@ async function updateAuthUI() {
   $("uploadPanel").style.display = currentUser && activeView === "gallery" ? "block" : "none";
 
   if (currentUser) await loadProfile();
+
   await loadPosts("myGallery", true);
 
   if (activeView === "profile" && currentUser) {
@@ -522,6 +546,7 @@ $("signOutButton").addEventListener("click", async () => {
 });
 
 $("uploadButton").addEventListener("click", uploadImage);
+
 $("heroUpload").addEventListener("click", () => {
   if (!currentUser) return showLogin();
   $("uploadPanel").scrollIntoView({ behavior: "smooth" });
@@ -544,12 +569,22 @@ document.querySelectorAll(".tab").forEach(tab => {
 db.auth.onAuthStateChange((_event, session) => {
   currentUser = session?.user || null;
   updateAuthUI();
-  if (currentUser) closeLogin();
+
+  if (currentUser) {
+    closeLogin();
+  } else {
+    $("googleButton").disabled = false;
+  }
 });
 
 /* INITIAL LOAD */
 (async function init() {
-  const { data: { session } } = await db.auth.getSession();
+  const { data: { session }, error } = await db.auth.getSession();
+
+  if (error) {
+    console.error("Session error:", error.message);
+  }
+
   currentUser = session?.user || null;
   await updateAuthUI();
 })();
