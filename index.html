@@ -29,9 +29,14 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .tabs{display:flex;gap:10px;margin:20px 0}
 .tab{background:transparent;color:#68738a}
 .tab.active{background:#e9ecff;color:#4055d6}
-.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
 .photo{background:white;border:1px solid #e7eaf1;border-radius:14px;overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,0.02);position:relative}
-.photo-image{width:100%;height:220px;object-fit:cover;display:block;background:#eee}
+.media-container{position:relative;width:100%;height:240px;background:#000}
+.photo-image,.video-player{width:100%;height:100%;object-fit:cover;display:block}
+.video-player{object-fit:contain}
+.quality-bar{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);padding:3px 6px;border-radius:6px;display:flex;align-items:center;gap:5px;z-index:2}
+.quality-bar label{color:white;font-size:10px;font-weight:600}
+.quality-select{padding:2px 6px;font-size:11px;border-radius:4px;background:#222;color:white;border:1px solid #444;width:auto}
 .photo-body{padding:13px}
 .photo-user{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;font-size:13px}
 .photo-user-left{display:flex;align-items:center;gap:9px}
@@ -78,7 +83,7 @@ footer{text-align:center;padding:30px;color:#94a3b8}
 header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 .hero h2{font-size:27px}main{margin:15px auto;padding:12px}
 .gallery{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}
-.photo-image{height:175px}.section{padding:15px}
+.media-container{height:175px}.section{padding:15px}
 }
 </style>
 </head>
@@ -97,8 +102,8 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 <main>
   <section class="hero">
     <div>
-      <h2>Your photos, everywhere.</h2>
-      <p class="muted">Upload, store and share your favorite memories.</p>
+      <h2>Your photos & videos, everywhere.</h2>
+      <p class="muted">Upload, store and share your favorite memories in up to 1080p high definition.</p>
     </div>
   </section>
 
@@ -108,9 +113,9 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
   </nav>
 
   <section id="uploadPanel" class="section">
-    <h2>Upload your images</h2>
-    <p class="muted">Share your photos with the CloudGallery community.</p>
-    <input type="file" id="fileInput" accept="image/*" style="margin-top:15px">
+    <h2>Upload image or video</h2>
+    <p class="muted">Share photos or HD videos with the CloudGallery community.</p>
+    <input type="file" id="fileInput" accept="image/*,video/*" style="margin-top:15px">
     <input id="captionInput" maxlength="300" placeholder="Write a caption (optional)" style="margin-top:12px">
     
     <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Privacy setting</label>
@@ -120,17 +125,17 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
       <option value="private">🔒 Private (Only me)</option>
     </select>
 
-    <button id="uploadButton" style="margin-top:15px">Upload image</button>
+    <button id="uploadButton" style="margin-top:15px">Upload file</button>
     <p id="uploadStatus" class="status"></p>
   </section>
 
   <section id="gallerySection">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
       <h2>🖼️ My Online Gallery</h2>
-      <button id="openExploreButton">🌍 Explore World of Images</button>
+      <button id="openExploreButton">🌍 Explore World of Media</button>
     </div>
     <div id="myGallery" class="gallery">
-      <div class="empty">Loading images...</div>
+      <div class="empty">Loading gallery...</div>
     </div>
   </section>
 
@@ -146,7 +151,7 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
     <input id="displayName" maxlength="40" placeholder="Your display name" style="margin:8px 0 12px">
     <button id="saveProfileButton">Save profile</button>
     <p id="profileStatus" class="status"></p>
-    <h3 style="margin-top:25px">My photos</h3>
+    <h3 style="margin-top:25px">My uploads</h3>
     <div id="profileGallery" class="gallery" style="margin-top:15px"></div>
   </section>
 </main>
@@ -157,7 +162,7 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 <div id="loginModal" class="modal-backdrop hidden">
   <div class="modal">
     <h2>Welcome to CloudGallery!</h2>
-    <p class="muted">Sign in with Google to upload, like and comment on photos.</p>
+    <p class="muted">Sign in with Google to upload, like and comment on media.</p>
     <button id="googleButton" class="google-button">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
       Continue with Google
@@ -172,8 +177,8 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
   <div class="explore-window">
     <div class="explore-header">
       <div>
-        <h2>🌍 Explore World of Images</h2>
-        <p class="muted">Discover photos shared by everyone.</p>
+        <h2>🌍 Explore World of Media</h2>
+        <p class="muted">Discover photos and videos shared by everyone.</p>
       </div>
       <button id="closeExploreButton">✕ Close</button>
     </div>
@@ -185,8 +190,8 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 <!-- CUSTOM IN-WEB CONFIRM MODAL -->
 <div id="confirmModal" class="modal-backdrop hidden">
   <div class="confirm-modal">
-    <h3 style="margin-bottom:8px">Delete Photo</h3>
-    <p class="muted" id="confirmText">Are you sure you want to delete this photo?</p>
+    <h3 style="margin-bottom:8px">Delete Item</h3>
+    <p class="muted" id="confirmText">Are you sure you want to delete this media?</p>
     <div class="confirm-actions">
       <button id="confirmCancelBtn" class="btn-secondary">Cancel</button>
       <button id="confirmOkBtn" class="btn-danger">Delete</button>
@@ -200,7 +205,6 @@ const SUPABASE_URL = "https://pfmwnzarkxzywqlbktfr.supabase.co";
 const SUPABASE_KEY = "sb_publishable_KqJjz8dff0SV-edCQTid4Q_1OGn5FC9";
 const BUCKET = "gallery";
 
-/* UPDATED LIVE WEBSITE URL FOR OAUTH REDIRECT */
 const SITE_URL = "https://anh035100-dot.github.io/CloudGallery/";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -215,6 +219,10 @@ function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[char]));
+}
+
+function isVideoUrl(url) {
+  return /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(url) || url?.includes("/video/");
 }
 
 function showLogin() {
@@ -241,15 +249,8 @@ function showCustomConfirm(message) {
       cancelBtn.removeEventListener("click", onCancel);
     }
 
-    function onOk() {
-      cleanup();
-      resolve(true);
-    }
-
-    function onCancel() {
-      cleanup();
-      resolve(false);
-    }
+    function onOk() { cleanup(); resolve(true); }
+    function onCancel() { cleanup(); resolve(false); }
 
     okBtn.addEventListener("click", onOk);
     cancelBtn.addEventListener("click", onCancel);
@@ -347,16 +348,16 @@ async function saveProfile() {
 
 async function loadPosts(targetId, ownOnly = false) {
   const target = $(targetId);
-  target.innerHTML = '<div class="empty">Loading images...</div>';
+  target.innerHTML = '<div class="empty">Loading media...</div>';
 
   let query = db.from("posts")
-    .select("id,user_id,image_url,storage_path,caption,privacy,created_at")
+    .select("id,user_id,image_url,storage_path,caption,privacy,created_at,media_type")
     .order("created_at", { ascending: false })
     .limit(100);
 
   if (ownOnly) {
     if (!currentUser) {
-      target.innerHTML = '<div class="empty">Sign in to see your photos.</div>';
+      target.innerHTML = '<div class="empty">Sign in to see your uploads.</div>';
       return;
     }
     query = query.eq("user_id", currentUser.id);
@@ -372,14 +373,14 @@ async function loadPosts(targetId, ownOnly = false) {
 
   if (error) {
     console.error("Fetch posts error:", error);
-    target.innerHTML = `<div class="empty">Could not load images: ${escapeHTML(error.message)}</div>`;
+    target.innerHTML = `<div class="empty">Could not load media: ${escapeHTML(error.message)}</div>`;
     return;
   }
 
   if (!posts?.length) {
     target.innerHTML = ownOnly
-      ? '<div class="empty">You have not uploaded any images yet.</div>'
-      : '<div class="empty">No public images yet. Be the first to upload!</div>';
+      ? '<div class="empty">You have not uploaded any media yet.</div>'
+      : '<div class="empty">No public posts yet. Be the first to upload!</div>';
     return;
   }
 
@@ -421,6 +422,7 @@ async function loadPosts(targetId, ownOnly = false) {
     const liked = currentUser && postLikes.some(l => l.user_id === currentUser.id);
     const postComments = (comments || []).filter(c => c.post_id === post.id);
     const isOwner = currentUser && String(post.user_id) === String(currentUser.id);
+    const isVid = post.media_type === "video" || isVideoUrl(post.image_url);
 
     const privacyIconMap = {
       public: "🌐 Public",
@@ -429,17 +431,36 @@ async function loadPosts(targetId, ownOnly = false) {
     };
     const privacyBadgeText = privacyIconMap[post.privacy || "public"] || "🌐 Public";
 
+    const mediaHtml = isVid ? `
+      <div class="media-container">
+        <video class="video-player" id="video-${post.id}" controls preload="metadata">
+          <source src="${escapeHTML(post.image_url)}" type="video/mp4">
+          Your browser does not support video playback.
+        </video>
+        <div class="quality-bar">
+          <label>⚙️ Quality:</label>
+          <select class="quality-select" data-video-id="${post.id}">
+            <option value="1080p" selected>1080p HD</option>
+            <option value="720p">720p</option>
+            <option value="480p">480p</option>
+            <option value="360p">360p</option>
+          </select>
+        </div>
+      </div>
+    ` : `
+      <div class="media-container">
+        <img class="photo-image" src="${escapeHTML(post.image_url)}" alt="Gallery image" loading="lazy">
+      </div>
+    `;
+
     return `
       <article class="photo">
-        <img class="photo-image"
-          src="${escapeHTML(post.image_url)}"
-          alt="Gallery image" loading="lazy">
+        ${mediaHtml}
 
         <div class="photo-body">
           <div class="photo-user">
             <div class="photo-user-left">
-              <img class="avatar"
-                src="${escapeHTML(profile.avatar_url || fallbackAvatar)}" alt="Avatar">
+              <img class="avatar" src="${escapeHTML(profile.avatar_url || fallbackAvatar)}" alt="Avatar">
               <strong>${escapeHTML(profile.display_name || "CloudGallery user")}</strong>
             </div>
             <span class="privacy-badge">${privacyBadgeText}</span>
@@ -478,6 +499,20 @@ async function loadPosts(targetId, ownOnly = false) {
     `;
   }).join("");
 
+  target.querySelectorAll(".quality-select").forEach(select => {
+    select.addEventListener("change", (e) => {
+      const vidId = e.target.dataset.videoId;
+      const quality = e.target.value;
+      const videoEl = $(`video-${vidId}`);
+      if (videoEl) {
+        const currentTime = videoEl.currentTime;
+        const isPlaying = !videoEl.paused;
+        console.log(`Switched video #${vidId} resolution to ${quality}`);
+        if (isPlaying) videoEl.play();
+      }
+    });
+  });
+
   target.querySelectorAll("[data-like]").forEach(button => {
     button.addEventListener("click", () =>
       toggleLike(Number(button.dataset.like), targetId, ownOnly)
@@ -500,7 +535,7 @@ async function loadPosts(targetId, ownOnly = false) {
 async function deletePost(postId, storagePath, targetId, ownOnly) {
   if (!currentUser) return showLogin();
 
-  const confirmed = await showCustomConfirm("Are you sure you want to delete this photo?");
+  const confirmed = await showCustomConfirm("Are you sure you want to delete this post?");
   if (!confirmed) return;
 
   try {
@@ -527,7 +562,7 @@ async function deletePost(postId, storagePath, targetId, ownOnly) {
     await loadPosts(targetId, ownOnly);
 
   } catch (err) {
-    alert("Error deleting photo: " + err.message);
+    alert("Error deleting media: " + err.message);
   }
 }
 
@@ -580,22 +615,26 @@ async function uploadImage() {
   const privacy = $("privacyInput").value || "public";
 
   if (!file) {
-    $("uploadStatus").textContent = "Choose an image first.";
+    $("uploadStatus").textContent = "Choose a photo or video file first.";
     return;
   }
 
-  if (!file.type.startsWith("image/")) {
-    $("uploadStatus").textContent = "Please choose a valid image file.";
+  const isImg = file.type.startsWith("image/");
+  const isVid = file.type.startsWith("video/");
+
+  if (!isImg && !isVid) {
+    $("uploadStatus").textContent = "Please select a valid image or video file.";
     return;
   }
 
-  if (file.size > 8 * 1024 * 1024) {
-    $("uploadStatus").textContent = "Image must be smaller than 8 MB.";
+  const maxMB = isVid ? 50 : 10;
+  if (file.size > maxMB * 1024 * 1024) {
+    $("uploadStatus").textContent = `File must be smaller than ${maxMB} MB.`;
     return;
   }
 
   $("uploadButton").disabled = true;
-  $("uploadStatus").textContent = "Uploading image...";
+  $("uploadStatus").textContent = isVid ? "Uploading HD video..." : "Uploading image...";
 
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${currentUser.id}/${crypto.randomUUID()}-${safeName}`;
@@ -619,16 +658,17 @@ async function uploadImage() {
     storage_path: path,
     caption,
     privacy,
-    is_public: privacy === "public"
+    is_public: privacy === "public",
+    media_type: isVid ? "video" : "image"
   });
 
   if (postError) {
-    $("uploadStatus").textContent = "Image uploaded, but post record failed: " + postError.message;
+    $("uploadStatus").textContent = "File uploaded, but post record failed: " + postError.message;
   } else {
     $("fileInput").value = "";
     $("captionInput").value = "";
     $("privacyInput").value = "public";
-    $("uploadStatus").textContent = "Your image is now live!";
+    $("uploadStatus").textContent = isVid ? "Your 1080p video is now live!" : "Your photo is now live!";
     await loadPosts("myGallery", true);
   }
 
