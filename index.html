@@ -164,10 +164,10 @@
     const SUPABASE_KEY =
         "sb_publishable_KqJjz8dff0SV-edCQTid4Q_1OGn5FC9";
 
-    const db = supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
-    );
+   const db = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
 
     const BUCKET = "gallery";
 
