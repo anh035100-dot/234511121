@@ -132,17 +132,15 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 
 <footer>© 2026 CloudGallery · Your memories in the cloud.</footer>
 
-<!-- GOOGLE SIGN-IN MODAL -->
+<!-- GOOGLE SIGN-IN -->
 <div id="loginModal" class="modal-backdrop hidden">
   <div class="modal">
     <h2>Welcome to CloudGallery!</h2>
     <p class="muted">Sign in with Google to upload, like and comment on photos.</p>
-
     <button id="googleButton" class="google-button">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="">
       Continue with Google
     </button>
-
     <button id="closeLoginButton" style="width:100%;margin-top:12px;background:#eef0ff;color:#4055d6">Close</button>
     <p id="loginStatus" class="status"></p>
   </div>
@@ -169,6 +167,9 @@ const SUPABASE_URL = "https://pfmwnzarkxzywqlbktfr.supabase.co";
 const SUPABASE_KEY = "sb_publishable_KqJjz8dff0SV-edCQTid4Q_1OGn5FC9";
 const BUCKET = "gallery";
 
+/* IMPORTANT: YOUR LIVE WEBSITE URL */
+const SITE_URL = "https://anh035100-dot.github.io/234511121/";
+
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
 const fallbackAvatar = "https://www.gravatar.com/avatar/?d=mp";
@@ -191,31 +192,34 @@ function closeLogin() {
   $("loginModal").classList.add("hidden");
 }
 
-/* GOOGLE SIGN-IN */
+/* FIXED GOOGLE SIGN-IN REDIRECT */
 async function signInWithGoogle() {
-  $("googleButton").disabled = true;
+  const button = $("googleButton");
+  button.disabled = true;
   $("loginStatus").textContent = "Connecting to Google...";
 
-  const redirectTo = "https://anh035100-dot.github.io/234511121/";
-
-  const { error } = await db.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: redirectTo,
-      queryParams: {
-        access_type: "offline",
-        prompt: "select_account"
+  try {
+    const { data, error } = await db.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: SITE_URL,
+        queryParams: {
+          access_type: "offline",
+          prompt: "select_account"
+        }
       }
-    }
-  });
+    });
 
-  if (error) {
-    $("loginStatus").textContent = "Sign-in failed: " + error.message;
-    $("googleButton").disabled = false;
+    if (error) {
+      $("loginStatus").textContent = "Google sign-in error: " + error.message;
+      button.disabled = false;
+    }
+  } catch (error) {
+    $("loginStatus").textContent = "Connection error: " + error.message;
+    button.disabled = false;
   }
 }
 
-/* LOAD PROFILE */
 async function loadProfile() {
   if (!currentUser) return;
 
@@ -252,7 +256,6 @@ async function saveProfile() {
   if (!currentUser) return showLogin();
 
   const display_name = $("displayName").value.trim();
-
   if (!display_name) {
     $("profileStatus").textContent = "Please enter a display name.";
     return;
@@ -278,7 +281,6 @@ async function saveProfile() {
   }
 }
 
-/* LOAD POSTS */
 async function loadPosts(targetId, ownOnly = false) {
   const target = $(targetId);
   target.innerHTML = '<div class="empty">Loading images...</div>';
@@ -417,7 +419,6 @@ async function addComment(event, postId, targetId, ownOnly) {
   else await loadPosts(targetId, ownOnly);
 }
 
-/* UPLOAD IMAGE */
 async function uploadImage() {
   if (!currentUser) return showLogin();
 
@@ -478,7 +479,6 @@ async function uploadImage() {
   $("uploadButton").disabled = false;
 }
 
-/* EXPLORE */
 function openExplore() {
   $("exploreModal").classList.remove("hidden");
   document.body.style.overflow = "hidden";
@@ -490,7 +490,6 @@ function closeExplore() {
   document.body.style.overflow = "";
 }
 
-/* NAVIGATION */
 function setView(view) {
   activeView = view;
 
@@ -514,7 +513,6 @@ function setView(view) {
   }
 }
 
-/* AUTHENTICATION UI */
 async function updateAuthUI() {
   $("signInButton").classList.toggle("hidden", !!currentUser);
   $("signOutButton").classList.toggle("hidden", !currentUser);
@@ -546,7 +544,6 @@ $("signOutButton").addEventListener("click", async () => {
 });
 
 $("uploadButton").addEventListener("click", uploadImage);
-
 $("heroUpload").addEventListener("click", () => {
   if (!currentUser) return showLogin();
   $("uploadPanel").scrollIntoView({ behavior: "smooth" });
@@ -581,9 +578,7 @@ db.auth.onAuthStateChange((_event, session) => {
 (async function init() {
   const { data: { session }, error } = await db.auth.getSession();
 
-  if (error) {
-    console.error("Session error:", error.message);
-  }
+  if (error) console.error("Session error:", error.message);
 
   currentUser = session?.user || null;
   await updateAuthUI();
