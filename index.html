@@ -2,520 +2,557 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudGallery</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudGallery</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f7fb;
-            color: #182230;
-        }
-
-        header {
-            background: white;
-            padding: 22px 8%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        header h1 {
-            color: #536dfe;
-            font-size: 25px;
-        }
-
-        main {
-            max-width: 1100px;
-            margin: 60px auto;
-            padding: 20px;
-        }
-
-        .hero {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .hero h2 {
-            font-size: 36px;
-            margin-bottom: 12px;
-        }
-
-        .hero p {
-            color: #64748b;
-        }
-
-        .upload {
-            background: white;
-            border: 2px dashed #a5b4fc;
-            border-radius: 16px;
-            padding: 50px 20px;
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        button {
-            background: #536dfe;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 9px;
-            cursor: pointer;
-            margin-top: 15px;
-            font-size: 14px;
-        }
-
-        button:hover {
-            background: #4055d6;
-        }
-
-        input {
-            max-width: 100%;
-            margin-top: 20px;
-        }
-
-        #status {
-            margin-top: 15px;
-            color: #64748b;
-        }
-
-        .gallery-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 22px;
-        }
-
-        .gallery-header h2 {
-            font-size: 26px;
-        }
-
-        #gallery-status {
-            color: #64748b;
-            margin-bottom: 20px;
-        }
-
-        #gallery {
-            display: grid;
-            grid-template-columns: repeat(
-                auto-fill,
-                minmax(220px, 1fr)
-            );
-            gap: 20px;
-        }
-
-        .photo {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 3px 12px #0000000d;
-        }
-
-        .photo img {
-            width: 100%;
-            height: 210px;
-            object-fit: cover;
-            display: block;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .photo img:hover {
-            transform: scale(1.03);
-        }
-
-        .photo p {
-            padding: 12px;
-            font-size: 14px;
-            overflow-wrap: anywhere;
-        }
-
-        .photo button {
-            margin: 0 12px 12px;
-        }
-
-        .empty {
-            background: white;
-            border-radius: 12px;
-            padding: 35px;
-            text-align: center;
-            color: #64748b;
-            grid-column: 1 / -1;
-        }
-
-        footer {
-            text-align: center;
-            padding: 30px;
-            color: #94a3b8;
-        }
-
-        @media (max-width: 600px) {
-            main {
-                margin: 30px auto;
-            }
-
-            .hero h2 {
-                font-size: 28px;
-            }
-
-            header {
-                padding: 18px 5%;
-            }
-
-            .gallery-header h2 {
-                font-size: 22px;
-            }
-        }
-    </style>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f5f7fb;color:#182230}
+button{border:0;border-radius:10px;padding:11px 17px;background:#536dfe;color:white;cursor:pointer;font-weight:600}
+button:hover{background:#4055d6}
+button:disabled{opacity:.5;cursor:not-allowed}
+input,textarea{font:inherit;border:1px solid #dfe3ed;border-radius:9px;padding:12px;width:100%;outline:none}
+input:focus,textarea:focus{border-color:#536dfe}
+header{background:white;padding:17px 6%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:5}
+header h1{color:#536dfe;font-size:25px}
+.header-right{display:flex;align-items:center;gap:12px}
+.avatar{width:35px;height:35px;border-radius:50%;object-fit:cover;background:#e9ecff}
+main{max-width:1150px;margin:35px auto;padding:20px}
+.hero{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:30px}
+.hero h2{font-size:34px;margin-bottom:10px}
+.muted{color:#718096;font-size:14px}
+.section{background:white;border:1px solid #e7eaf1;border-radius:15px;padding:22px;margin-bottom:25px}
+.section h2{margin-bottom:12px}
+.tabs{display:flex;gap:10px;margin:20px 0}
+.tab{background:transparent;color:#68738a}
+.tab.active{background:#e9ecff;color:#4055d6}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
+.photo{background:white;border:1px solid #e7eaf1;border-radius:14px;overflow:hidden}
+.photo-image{width:100%;height:220px;object-fit:cover;display:block;background:#eee}
+.photo-body{padding:13px}
+.photo-user{display:flex;align-items:center;gap:9px;margin-bottom:10px;font-size:13px}
+.photo-user .avatar{width:29px;height:29px}
+.caption{margin:10px 0;overflow-wrap:anywhere}
+.actions{display:flex;gap:8px;margin-top:12px}
+.like{background:#fff0f3;color:#d33b65;padding:8px 12px}
+.like.liked{background:#ffdce6}
+.comment-button{background:#eef0ff;color:#4055d6;padding:8px 12px}
+.comments{border-top:1px solid #eee;margin-top:12px;padding-top:10px}
+.comment{font-size:13px;margin:8px 0;overflow-wrap:anywhere}
+.comment-form{display:flex;gap:6px;margin-top:10px}
+.comment-form input{min-width:0}
+.comment-form button{padding:8px 11px}
+.empty{background:white;border:1px dashed #ccd3e2;border-radius:13px;padding:35px;text-align:center;color:#718096;grid-column:1/-1}
+.status{margin-top:12px;color:#64748b;font-size:13px;min-height:18px}
+.profile-header{display:flex;align-items:center;gap:15px;margin-bottom:18px}
+.profile-header .avatar{width:65px;height:65px}
+.hidden{display:none!important}
+.modal-backdrop{position:fixed;inset:0;background:#10182b99;z-index:20;display:flex;align-items:center;justify-content:center;padding:15px}
+.modal{background:white;width:min(430px,100%);padding:25px;border-radius:18px}
+.modal h2{margin-bottom:10px}
+.google-button{background:white;color:#222;border:1px solid #ddd;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:20px}
+.google-button img{width:20px;height:20px}
+.explore-window{width:min(1200px,100%);height:92vh;overflow-y:auto;background:#f5f7fb;border-radius:18px;padding:22px}
+.explore-header{display:flex;justify-content:space-between;align-items:center;gap:15px;background:white;padding:16px;border-radius:12px;margin-bottom:20px;position:sticky;top:0;z-index:3}
+.explore-header h2{margin-bottom:5px}
+.explore-header button{flex-shrink:0}
+#uploadPanel{display:none}
+footer{text-align:center;padding:30px;color:#94a3b8}
+@media(max-width:650px){
+header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
+.hero h2{font-size:27px}main{margin:15px auto;padding:12px}
+.gallery{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}
+.photo-image{height:175px}.section{padding:15px}
+}
+</style>
 </head>
 
 <body>
-
 <header>
-    <h1>☁ CloudGallery</h1>
-    <span>My Online Gallery</span>
+  <h1>☁ CloudGallery</h1>
+  <div class="header-right">
+    <img id="headerAvatar" class="avatar hidden" alt="Profile">
+    <span id="userLabel" class="muted">Not signed in</span>
+    <button id="signInButton">Sign in</button>
+    <button id="signOutButton" class="hidden">Sign out</button>
+  </div>
 </header>
 
 <main>
+  <section class="hero">
+    <div>
+      <h2>Your photos, everywhere.</h2>
+      <p class="muted">Upload, store and share your favorite memories.</p>
+    </div>
+    <button id="heroUpload">＋ Upload image</button>
+  </section>
 
-    <section class="hero">
-        <h2>Your photos, everywhere.</h2>
-        <p>Upload, store and share your favorite memories.</p>
-    </section>
+  <nav class="tabs">
+    <button class="tab active" data-view="gallery">My Online Gallery</button>
+    <button class="tab" data-view="profile">My Profile</button>
+  </nav>
 
-    <section class="upload">
-        <h2>Upload your images</h2>
-        <p>Choose images from your device.</p>
+  <section id="uploadPanel" class="section">
+    <h2>Upload your images</h2>
+    <p class="muted">Share your photos with the CloudGallery community.</p>
+    <input type="file" id="fileInput" accept="image/*" style="margin-top:15px">
+    <input id="captionInput" maxlength="300" placeholder="Write a caption (optional)" style="margin-top:12px">
+    <button id="uploadButton" style="margin-top:12px">Upload image</button>
+    <p id="uploadStatus" class="status"></p>
+  </section>
 
-        <input
-            type="file"
-            id="fileInput"
-            accept="image/*"
-            multiple
-        >
+  <section id="gallerySection">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
+      <h2>🖼️ My Online Gallery</h2>
+      <button id="openExploreButton">🌍 Explore World of Images</button>
+    </div>
+    <p id="galleryStatus" class="status">Loading...</p>
+    <div id="myGallery" class="gallery"></div>
+  </section>
 
-        <br>
-
-        <button onclick="uploadImages()">
-            Upload Images
-        </button>
-
-        <p id="status">Connecting to CloudGallery...</p>
-    </section>
-
-    <section>
-        <div class="gallery-header">
-            <h2>🖼️ My Online Gallery</h2>
-
-            <button onclick="loadGallery()">
-                ↻ Refresh Gallery
-            </button>
-        </div>
-
-        <p id="gallery-status">Loading images...</p>
-
-        <section id="gallery"></section>
-    </section>
-
+  <section id="profileSection" class="section hidden">
+    <div class="profile-header">
+      <img id="profileAvatar" class="avatar" alt="Profile">
+      <div>
+        <h2 id="profileHeading">My Profile</h2>
+        <p id="profileEmail" class="muted"></p>
+      </div>
+    </div>
+    <label class="muted">Display name</label>
+    <input id="displayName" maxlength="40" placeholder="Your display name" style="margin:8px 0 12px">
+    <button id="saveProfileButton">Save profile</button>
+    <p id="profileStatus" class="status"></p>
+    <h3 style="margin-top:25px">My public photos</h3>
+    <div id="profileGallery" class="gallery" style="margin-top:15px"></div>
+  </section>
 </main>
 
-<footer>
-    © 2026 CloudGallery · Your memories in the cloud.
-</footer>
+<footer>© 2026 CloudGallery · Your memories in the cloud.</footer>
+
+<!-- GOOGLE SIGN-IN -->
+<div id="loginModal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Welcome to CloudGallery!</h2>
+    <p class="muted">Sign in with Google to upload, like and comment on photos.</p>
+    <button id="googleButton" class="google-button">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="">
+      Continue with Google
+    </button>
+    <button id="closeLoginButton" style="width:100%;margin-top:12px;background:#eef0ff;color:#4055d6">Close</button>
+    <p id="loginStatus" class="status"></p>
+  </div>
+</div>
+
+<!-- EXPLORE WORLD POP-UP -->
+<div id="exploreModal" class="modal-backdrop hidden">
+  <div class="explore-window">
+    <div class="explore-header">
+      <div>
+        <h2>🌍 Explore World of Images</h2>
+        <p class="muted">Discover photos shared by everyone.</p>
+      </div>
+      <button id="closeExploreButton">✕ Close</button>
+    </div>
+    <p id="exploreStatus" class="status"></p>
+    <div id="exploreGallery" class="gallery"></div>
+  </div>
+</div>
 
 <script>
-    // SUPABASE CONFIGURATION
+/* SUPABASE CONFIGURATION */
+const SUPABASE_URL = "https://pfmwnzarkxzywqlbktfr.supabase.co";
+const SUPABASE_KEY = "sb_publishable_KqJjz8dff0SV-edCQTid4Q_1OGn5FC9";
+const BUCKET = "gallery";
 
-    const SUPABASE_URL =
-        "https://pfmwnzarkxzywqlbktfr.supabase.co";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = id => document.getElementById(id);
+const fallbackAvatar = "https://www.gravatar.com/avatar/?d=mp";
 
-    const SUPABASE_KEY =
-        "sb_publishable_KqJjz8dff0SV-edCQTid4Q_1OGn5FC9";
+let currentUser = null;
+let currentProfile = null;
+let activeView = "gallery";
 
-    const BUCKET = "gallery";
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[char]));
+}
 
-    const db = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
-    );
+function showLogin() {
+  $("loginModal").classList.remove("hidden");
+}
 
-    document.getElementById("status").textContent =
-        "Ready! Select images to upload.";
+function closeLogin() {
+  $("loginModal").classList.add("hidden");
+}
 
+async function signInWithGoogle() {
+  $("loginStatus").textContent = "Connecting to Google...";
+  const redirectTo = window.location.origin + window.location.pathname;
 
-    // GET FILES FROM A FOLDER, INCLUDING SUBFOLDERS
+  const { error } = await db.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo }
+  });
 
-    async function getAllImages(folder = "") {
+  if (error) $("loginStatus").textContent = error.message;
+}
 
-        let images = [];
-        let offset = 0;
-        const batchSize = 1000;
+async function loadProfile() {
+  if (!currentUser) return;
 
-        while (true) {
+  const { data, error } = await db
+    .from("profiles")
+    .select("*")
+    .eq("id", currentUser.id)
+    .maybeSingle();
 
-            const { data, error } = await db.storage
-                .from(BUCKET)
-                .list(folder, {
-                    limit: batchSize,
-                    offset: offset,
-                    sortBy: {
-                        column: "created_at",
-                        order: "desc"
-                    }
-                });
+  if (error) {
+    console.error(error);
+    return;
+  }
 
-            if (error) {
-                throw error;
-            }
+  currentProfile = data;
 
-            for (const item of data) {
+  const name = data?.display_name ||
+    currentUser.user_metadata?.full_name ||
+    currentUser.user_metadata?.name ||
+    "CloudGallery user";
 
-                const path = folder
-                    ? folder + "/" + item.name
-                    : item.name;
+  const avatar = data?.avatar_url ||
+    currentUser.user_metadata?.avatar_url ||
+    fallbackAvatar;
 
-                // A folder has no file ID.
-                if (!item.id && !item.metadata) {
-                    const nestedImages =
-                        await getAllImages(path);
+  $("profileHeading").textContent = name;
+  $("profileEmail").textContent = currentUser.email || "";
+  $("displayName").value = name;
+  $("profileAvatar").src = avatar;
+  $("headerAvatar").src = avatar;
+}
 
-                    images.push(...nestedImages);
+async function saveProfile() {
+  if (!currentUser) return showLogin();
 
-                } else {
-                    images.push({
-                        ...item,
-                        fullPath: path
-                    });
-                }
-            }
+  const display_name = $("displayName").value.trim();
+  if (!display_name) {
+    $("profileStatus").textContent = "Please enter a display name.";
+    return;
+  }
 
-            if (data.length < batchSize) {
-                break;
-            }
+  const avatar_url = currentProfile?.avatar_url ||
+    currentUser.user_metadata?.avatar_url || null;
 
-            offset += batchSize;
-        }
+  const { error } = await db.from("profiles").upsert({
+    id: currentUser.id,
+    display_name,
+    avatar_url,
+    updated_at: new Date().toISOString()
+  });
 
-        return images;
+  $("profileStatus").textContent = error
+    ? error.message
+    : "Profile saved successfully!";
+
+  if (!error) {
+    await loadProfile();
+    await loadPosts();
+  }
+}
+
+async function loadPosts(targetId, ownOnly = false) {
+  const target = $(targetId);
+  target.innerHTML = '<div class="empty">Loading images...</div>';
+
+  let query = db.from("posts")
+    .select("id,user_id,image_url,caption,created_at,profiles(display_name,avatar_url)")
+    .eq("is_public", true)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (ownOnly) {
+    if (!currentUser) {
+      target.innerHTML = '<div class="empty">Sign in to see your photos.</div>';
+      return;
     }
+    query = query.eq("user_id", currentUser.id);
+  }
 
+  const { data: posts, error } = await query;
 
-    // LOAD ALL PUBLISHED IMAGES
+  if (error) {
+    console.error(error);
+    target.innerHTML = `<div class="empty">Could not load images: ${escapeHTML(error.message)}</div>`;
+    return;
+  }
 
-    async function loadGallery() {
+  if (!posts?.length) {
+    target.innerHTML = '<div class="empty">No public images yet. Upload the first photo!</div>';
+    return;
+  }
 
-        const gallery =
-            document.getElementById("gallery");
+  const ids = posts.map(post => post.id);
 
-        const galleryStatus =
-            document.getElementById("gallery-status");
+  const [{ data: likes, error: likesError }, { data: comments, error: commentsError }] =
+    await Promise.all([
+      db.from("likes").select("post_id,user_id").in("post_id", ids),
+      db.from("comments")
+        .select("id,post_id,user_id,content,created_at,profiles(display_name)")
+        .in("post_id", ids)
+        .order("created_at", { ascending: true })
+    ]);
 
-        gallery.innerHTML = "";
+  if (likesError) console.warn(likesError);
+  if (commentsError) console.warn(commentsError);
 
-        galleryStatus.textContent =
-            "Loading images from Supabase...";
+  target.innerHTML = posts.map(post => {
+    const profile = post.profiles || {};
+    const postLikes = (likes || []).filter(like => like.post_id === post.id);
+    const liked = currentUser && postLikes.some(like => like.user_id === currentUser.id);
+    const postComments = (comments || []).filter(comment => comment.post_id === post.id);
 
-        try {
-
-            const files = await getAllImages();
-
-            console.log("Images found:", files);
-
-            const images = files.filter(file =>
-                file.fullPath &&
-                /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif|heic)$/i
-                    .test(file.fullPath)
-            );
-
-            if (images.length === 0) {
-
-                gallery.innerHTML = `
-                    <div class="empty">
-                        <h3>No images found!</h3>
-                        <p>
-                            Your gallery bucket is currently empty
-                            or contains no supported image files.
-                        </p>
-                    </div>
-                `;
-
-                galleryStatus.textContent =
-                    "0 images published.";
-
-                return;
-            }
-
-            for (const file of images) {
-
-                const { data: urlData } = db.storage
-                    .from(BUCKET)
-                    .getPublicUrl(file.fullPath);
-
-                const card = document.createElement("div");
-                card.className = "photo";
-
-                const img = document.createElement("img");
-
-                img.src = urlData.publicUrl;
-                img.alt = file.name;
-                img.loading = "lazy";
-
-                img.onclick = () => {
-                    window.open(
-                        urlData.publicUrl,
-                        "_blank"
-                    );
-                };
-
-                img.onerror = () => {
-                    img.alt = "Image could not be displayed";
-                    img.style.objectFit = "contain";
-                };
-
-                const name = document.createElement("p");
-                name.textContent = file.name;
-
-                const share = document.createElement("button");
-                share.textContent = "Copy Image Link";
-
-                share.onclick = async () => {
-
-                    try {
-                        await navigator.clipboard.writeText(
-                            urlData.publicUrl
-                        );
-
-                        share.textContent = "Copied!";
-
-                    } catch {
-                        prompt(
-                            "Copy this image link:",
-                            urlData.publicUrl
-                        );
-                    }
-                };
-
-                card.appendChild(img);
-                card.appendChild(name);
-                card.appendChild(share);
-
-                gallery.appendChild(card);
-            }
-
-            galleryStatus.textContent =
-                `Showing ${images.length} published images.`;
-
-        } catch (error) {
-
-            console.error("Gallery error:", error);
-
-            galleryStatus.textContent =
-                "Error loading images: " + error.message;
-
-            gallery.innerHTML = `
-                <div class="empty">
-                    <h3>Unable to load images</h3>
-                    <p>${error.message}</p>
-                    <p>Check your Supabase Storage policies.</p>
+    return `
+      <article class="photo">
+        <img class="photo-image" src="${escapeHTML(post.image_url)}" alt="Community image" loading="lazy">
+        <div class="photo-body">
+          <div class="photo-user">
+            <img class="avatar" src="${escapeHTML(profile.avatar_url || fallbackAvatar)}" alt="">
+            <strong>${escapeHTML(profile.display_name || "CloudGallery user")}</strong>
+          </div>
+          ${post.caption ? `<p class="caption">${escapeHTML(post.caption)}</p>` : ""}
+          <p class="muted">${new Date(post.created_at).toLocaleDateString()}</p>
+          <div class="actions">
+            <button class="like ${liked ? "liked" : ""}" data-like="${post.id}">♥ ${postLikes.length}</button>
+            <button class="comment-button" data-comment-toggle="${post.id}">Comments (${postComments.length})</button>
+          </div>
+          <div class="comments">
+            <div>
+              ${postComments.map(comment => `
+                <div class="comment">
+                  <strong>${escapeHTML(comment.profiles?.display_name || "User")}:</strong>
+                  ${escapeHTML(comment.content)}
                 </div>
-            `;
-        }
+              `).join("") || '<span class="muted">No comments yet.</span>'}
+            </div>
+            <form class="comment-form" data-comment-form="${post.id}">
+              <input name="content" maxlength="500"
+                placeholder="${currentUser ? "Write a comment..." : "Sign in to comment"}"
+                ${currentUser ? "" : "disabled"}>
+              <button type="submit" ${currentUser ? "" : "disabled"}>Send</button>
+            </form>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  target.querySelectorAll("[data-like]").forEach(button => {
+    button.addEventListener("click", () => toggleLike(Number(button.dataset.like), targetId, ownOnly));
+  });
+
+  target.querySelectorAll("[data-comment-form]").forEach(form => {
+    form.addEventListener("submit", event =>
+      addComment(event, Number(form.dataset.commentForm), targetId, ownOnly)
+    );
+  });
+}
+
+async function toggleLike(postId, targetId, ownOnly) {
+  if (!currentUser) return showLogin();
+
+  const { data: existing, error } = await db.from("likes")
+    .select("post_id")
+    .eq("post_id", postId)
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+
+  if (error) return alert(error.message);
+
+  const result = existing
+    ? await db.from("likes").delete()
+        .eq("post_id", postId).eq("user_id", currentUser.id)
+    : await db.from("likes").insert({
+        post_id: postId,
+        user_id: currentUser.id
+      });
+
+  if (result.error) alert(result.error.message);
+  await loadPosts(targetId, ownOnly);
+}
+
+async function addComment(event, postId, targetId, ownOnly) {
+  event.preventDefault();
+  if (!currentUser) return showLogin();
+
+  const form = event.currentTarget;
+  const content = form.elements.content.value.trim();
+  if (!content) return;
+
+  const { error } = await db.from("comments").insert({
+    post_id: postId,
+    user_id: currentUser.id,
+    content
+  });
+
+  if (error) alert(error.message);
+  else await loadPosts(targetId, ownOnly);
+}
+
+async function uploadImage() {
+  if (!currentUser) return showLogin();
+
+  const file = $("fileInput").files[0];
+  const caption = $("captionInput").value.trim();
+
+  if (!file) {
+    $("uploadStatus").textContent = "Choose an image first.";
+    return;
+  }
+
+  if (!file.type.startsWith("image/")) {
+    $("uploadStatus").textContent = "Please choose an image file.";
+    return;
+  }
+
+  if (file.size > 8 * 1024 * 1024) {
+    $("uploadStatus").textContent = "Image must be smaller than 8 MB.";
+    return;
+  }
+
+  $("uploadButton").disabled = true;
+  $("uploadStatus").textContent = "Uploading...";
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = `${currentUser.id}/${crypto.randomUUID()}-${safeName}`;
+
+  const { error: uploadError } = await db.storage.from(BUCKET).upload(path, file, {
+    contentType: file.type,
+    upsert: false
+  });
+
+  if (uploadError) {
+    $("uploadStatus").textContent = "Upload failed: " + uploadError.message;
+    $("uploadButton").disabled = false;
+    return;
+  }
+
+  const { data: publicData } = db.storage.from(BUCKET).getPublicUrl(path);
+
+  const { error: postError } = await db.from("posts").insert({
+    user_id: currentUser.id,
+    image_url: publicData.publicUrl,
+    storage_path: path,
+    caption,
+    is_public: true
+  });
+
+  if (postError) {
+    $("uploadStatus").textContent = "Image uploaded, but post could not be saved: " + postError.message;
+  } else {
+    $("fileInput").value = "";
+    $("captionInput").value = "";
+    $("uploadStatus").textContent = "Your image is now public!";
+    await loadPosts("myGallery", true);
+  }
+
+  $("uploadButton").disabled = false;
+}
+
+function openExplore() {
+  $("exploreModal").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+  loadPosts("exploreGallery", false);
+}
+
+function closeExplore() {
+  $("exploreModal").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+function setView(view) {
+  activeView = view;
+  document.querySelectorAll(".tab").forEach(tab =>
+    tab.classList.toggle("active", tab.dataset.view === view)
+  );
+
+  $("gallerySection").classList.toggle("hidden", view !== "gallery");
+  $("profileSection").classList.toggle("hidden", view !== "profile");
+  $("uploadPanel").style.display = view === "gallery" && currentUser ? "block" : "none";
+
+  if (view === "profile") {
+    if (!currentUser) {
+      showLogin();
+      return;
     }
+    loadProfile();
+    loadPosts("profileGallery", true);
+  } else {
+    loadPosts("myGallery", true);
+  }
+}
 
+async function updateAuthUI() {
+  $("signInButton").classList.toggle("hidden", !!currentUser);
+  $("signOutButton").classList.toggle("hidden", !currentUser);
+  $("headerAvatar").classList.toggle("hidden", !currentUser);
 
-    // UPLOAD IMAGES TO SUPABASE
+  $("userLabel").textContent = currentUser
+    ? (currentUser.user_metadata?.full_name || currentUser.email || "Signed in")
+    : "Not signed in";
 
-    async function uploadImages() {
+  $("uploadPanel").style.display = currentUser && activeView === "gallery" ? "block" : "none";
 
-        const input =
-            document.getElementById("fileInput");
+  if (currentUser) await loadProfile();
+  await loadPosts("myGallery", true);
 
-        const status =
-            document.getElementById("status");
+  if (activeView === "profile" && currentUser) {
+    await loadPosts("profileGallery", true);
+  }
+}
 
-        const files = Array.from(input.files);
+/* BUTTON EVENTS */
+$("signInButton").addEventListener("click", showLogin);
+$("googleButton").addEventListener("click", signInWithGoogle);
+$("closeLoginButton").addEventListener("click", closeLogin);
 
-        if (files.length === 0) {
+$("signOutButton").addEventListener("click", async () => {
+  const { error } = await db.auth.signOut();
+  if (error) alert(error.message);
+});
 
-            status.textContent =
-                "Please select an image first.";
+$("uploadButton").addEventListener("click", uploadImage);
+$("heroUpload").addEventListener("click", () => {
+  if (!currentUser) return showLogin();
+  $("uploadPanel").scrollIntoView({ behavior: "smooth" });
+});
 
-            return;
-        }
+$("openExploreButton").addEventListener("click", openExplore);
+$("closeExploreButton").addEventListener("click", closeExplore);
 
-        for (const file of files) {
+$("exploreModal").addEventListener("click", event => {
+  if (event.target === $("exploreModal")) closeExplore();
+});
 
-            if (!file.type.startsWith("image/")) {
+$("saveProfileButton").addEventListener("click", saveProfile);
 
-                status.textContent =
-                    "Invalid image file: " + file.name;
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => setView(tab.dataset.view));
+});
 
-                continue;
-            }
+/* AUTH SESSION */
+db.auth.onAuthStateChange((_event, session) => {
+  currentUser = session?.user || null;
+  updateAuthUI();
+  if (currentUser) closeLogin();
+});
 
-            if (file.size > 5 * 1024 * 1024) {
-
-                status.textContent =
-                    file.name + " exceeds the 5 MB limit.";
-
-                continue;
-            }
-
-            status.textContent =
-                "Uploading " + file.name + "...";
-
-            const safeName = file.name.replace(
-                /[^a-zA-Z0-9._-]/g,
-                "_"
-            );
-
-            const path =
-                Date.now() + "-" +
-                crypto.randomUUID() + "-" +
-                safeName;
-
-            const { error } = await db.storage
-                .from(BUCKET)
-                .upload(path, file, {
-                    contentType: file.type,
-                    upsert: false
-                });
-
-            if (error) {
-
-                status.textContent =
-                    "Upload failed: " + error.message;
-
-                return;
-            }
-        }
-
-        status.textContent =
-            "All images uploaded successfully!";
-
-        input.value = "";
-
-        await loadGallery();
-    }
-
-
-    // START GALLERY
-
-    loadGallery();
-
+/* INITIAL LOAD */
+(async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  currentUser = session?.user || null;
+  await updateAuthUI();
+})();
 </script>
-
 </body>
 </html>
