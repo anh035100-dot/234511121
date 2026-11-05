@@ -16,7 +16,6 @@ button:disabled{opacity:.5;cursor:not-allowed}
 input,textarea,select{font:inherit;border:1px solid #dfe3ed;border-radius:9px;padding:12px;width:100%;outline:none;background:white}
 input:focus,textarea:focus,select:focus{border-color:#536dfe}
 textarea{resize:vertical;min-height:90px}
-#fileInput,#captionInput,#privacyInput,#avatarFileInput,#bgFileInput,#iconFileInput{border-radius:9px}
 header{background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);padding:17px 6%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:5}
 header h1{color:#536dfe;font-size:25px}
 .header-right{display:flex;align-items:center;gap:12px}
@@ -293,9 +292,15 @@ let activeView = "gallery";
 let editingPostId = null;
 
 function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[char]));
+  return String(value ?? "").replace(/[&<>"']/g, function(char) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[char];
+  });
 }
 
 function isVideoUrl(url) {
@@ -333,7 +338,7 @@ function closeLogin() {
 }
 
 function showCustomConfirm(message) {
-  return new Promise((resolve) => {
+  return new Promise(function(resolve) {
     const modal = $("confirmModal");
     const textEl = $("confirmText");
     const okBtn = $("confirmOkBtn");
@@ -362,7 +367,7 @@ async function signInWithGoogle() {
   $("loginStatus").textContent = "Connecting to Google...";
 
   try {
-    const { data, error } = await db.auth.signInWithOAuth({
+    const { error } = await db.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: SITE_URL,
@@ -493,7 +498,7 @@ async function saveProfile() {
   }
 }
 
-$("deleteIconBtn").addEventListener("click", async () => {
+$("deleteIconBtn").addEventListener("click", async function() {
   if (!currentUser) return showLogin();
   $("iconFileInput").value = "";
 
@@ -514,7 +519,7 @@ $("deleteIconBtn").addEventListener("click", async () => {
   }
 });
 
-$("clearBgBtn").addEventListener("click", async () => {
+$("clearBgBtn").addEventListener("click", async function() {
   if (!currentUser) return showLogin();
   $("bgFileInput").value = "";
   $("bgColorInput").value = "#f5f7fb";
@@ -590,62 +595,91 @@ async function loadFriendsView() {
     return f.friend_id === currentUser.id && f.status === "pending";
   });
 
-  pendingGrid.innerHTML = incomingRequests.length ? incomingRequests.map(function(f) {
-    const p = profileMap[f.user_id] || {};
-    return '<div class="user-card">' +
-        '<img class="avatar" src="' + escapeHTML(p.avatar_url || fallbackAvatar) + '" alt="Avatar">' +
+  pendingGrid.innerHTML = "";
+  if (incomingRequests.length === 0) {
+    pendingGrid.innerHTML = '<div class="empty">No pending friend requests.</div>';
+  } else {
+    incomingRequests.forEach(function(f) {
+      const p = profileMap[f.user_id] || {};
+      const card = document.createElement("div");
+      card.className = "user-card";
+      card.innerHTML = '<img class="avatar" src="' + escapeHTML(p.avatar_url || fallbackAvatar) + '" alt="Avatar">' +
         '<strong>' + escapeHTML(p.display_name || "CloudGallery user") + '</strong>' +
         '<div style="display:flex;gap:6px">' +
-          '<button class="btn-sm" onclick="acceptFriendRequest(\'' + f.id + '\')">Accept</button>' +
-          '<button class="btn-sm btn-danger" onclick="removeFriendship(\'' + f.id + '\')">Decline</button>' +
-        '</div>' +
-      '</div>';
-  }).join("") : '<div class="empty">No pending friend requests.</div>';
+          '<button class="btn-sm accept-req-btn">Accept</button>' +
+          '<button class="btn-sm btn-danger decline-req-btn">Decline</button>' +
+        '</div>';
+      card.querySelector(".accept-req-btn").addEventListener("click", function() { acceptFriendRequest(f.id); });
+      card.querySelector(".decline-req-btn").addEventListener("click", function() { removeFriendship(f.id); });
+      pendingGrid.appendChild(card);
+    });
+  }
 
   const activeFriends = (friendships || []).filter(function(f) {
     return f.status === "accepted";
   });
   
-  friendsGrid.innerHTML = activeFriends.length ? activeFriends.map(function(f) {
-    const friendId = f.user_id === currentUser.id ? f.friend_id : f.user_id;
-    const p = profileMap[friendId] || {};
-    return '<div class="user-card">' +
-        '<img class="avatar" src="' + escapeHTML(p.avatar_url || fallbackAvatar) + '" alt="Avatar">' +
+  friendsGrid.innerHTML = "";
+  if (activeFriends.length === 0) {
+    friendsGrid.innerHTML = '<div class="empty">You have not added any friends yet.</div>';
+  } else {
+    activeFriends.forEach(function(f) {
+      const friendId = f.user_id === currentUser.id ? f.friend_id : f.user_id;
+      const p = profileMap[friendId] || {};
+      const card = document.createElement("div");
+      card.className = "user-card";
+      card.innerHTML = '<img class="avatar" src="' + escapeHTML(p.avatar_url || fallbackAvatar) + '" alt="Avatar">' +
         '<strong>' + escapeHTML(p.display_name || "CloudGallery user") + '</strong>' +
-        '<button class="btn-sm btn-danger" onclick="removeFriendship(\'' + f.id + '\')">Unfriend</button>' +
-      '</div>';
-  }).join("") : '<div class="empty">You have not added any friends yet.</div>';
+        '<button class="btn-sm btn-danger unfriend-btn">Unfriend</button>';
+      card.querySelector(".unfriend-btn").addEventListener("click", function() { removeFriendship(f.id); });
+      friendsGrid.appendChild(card);
+    });
+  }
 
   const searchFilter = $("searchUsersInput").value.toLowerCase().trim();
   const otherUsers = (allProfiles || []).filter(function(p) {
     return p.id !== currentUser.id && (!searchFilter || (p.display_name || "").toLowerCase().includes(searchFilter));
   });
 
-  usersGrid.innerHTML = otherUsers.length ? otherUsers.map(function(p) {
-    const existingRel = (friendships || []).find(function(f) {
-      return (f.user_id === currentUser.id && f.friend_id === p.id) ||
-             (f.friend_id === currentUser.id && f.user_id === p.id);
-    });
+  usersGrid.innerHTML = "";
+  if (otherUsers.length === 0) {
+    usersGrid.innerHTML = '<div class="empty">No other users found.</div>';
+  } else {
+    otherUsers.forEach(function(p) {
+      const existingRel = (friendships || []).find(function(f) {
+        return (f.user_id === currentUser.id && f.friend_id === p.id) ||
+               (f.friend_id === currentUser.id && f.user_id === p.id);
+      });
 
-    let actionButtonHtml = "";
-    if (!existingRel) {
-      actionButtonHtml = '<button class="btn-sm" onclick="sendFriendRequest(\'' + p.id + '\')">➕ Add Friend</button>';
-    } else if (existingRel.status === "pending") {
-      if (existingRel.user_id === currentUser.id) {
-        actionButtonHtml = '<button class="btn-sm btn-secondary" disabled>Request Sent</button>';
+      const card = document.createElement("div");
+      card.className = "user-card";
+      
+      let actionBtnHtml = "";
+      if (!existingRel) {
+        actionBtnHtml = '<button class="btn-sm add-friend-btn">➕ Add Friend</button>';
+      } else if (existingRel.status === "pending") {
+        if (existingRel.user_id === currentUser.id) {
+          actionBtnHtml = '<button class="btn-sm btn-secondary" disabled>Request Sent</button>';
+        } else {
+          actionBtnHtml = '<button class="btn-sm accept-pending-btn">Accept</button>';
+        }
       } else {
-        actionButtonHtml = '<button class="btn-sm" onclick="acceptFriendRequest(\'' + existingRel.id + '\')">Accept</button>';
+        actionBtnHtml = '<button class="btn-sm btn-secondary" disabled>✓ Friends</button>';
       }
-    } else {
-      actionButtonHtml = '<button class="btn-sm btn-secondary" disabled>✓ Friends</button>';
-    }
 
-    return '<div class="user-card">' +
-        '<img class="avatar" src="' + escapeHTML(p.avatar_url || fallbackAvatar) + '" alt="Avatar">' +
+      card.innerHTML = '<img class="avatar" src="' + escapeHTML(p.avatar_url || fallbackAvatar) + '" alt="Avatar">' +
         '<strong>' + escapeHTML(p.display_name || "CloudGallery user") + '</strong>' +
-        actionButtonHtml +
-      '</div>';
-  }).join("") : '<div class="empty">No other users found.</div>';
+        actionBtnHtml;
+
+      if (!existingRel) {
+        card.querySelector(".add-friend-btn").addEventListener("click", function() { sendFriendRequest(p.id); });
+      } else if (existingRel.status === "pending" && existingRel.friend_id === currentUser.id) {
+        card.querySelector(".accept-pending-btn").addEventListener("click", function() { acceptFriendRequest(existingRel.id); });
+      }
+
+      usersGrid.appendChild(card);
+    });
+  }
 }
 
 async function sendFriendRequest(targetUserId) {
@@ -747,7 +781,9 @@ async function loadPosts(targetId, ownOnly) {
   const commentProfileMap = {};
   commentProfiles.forEach(function(p) { commentProfileMap[p.id] = p; });
 
-  target.innerHTML = posts.map(function(post) {
+  target.innerHTML = "";
+
+  posts.forEach(function(post) {
     const profile = profileMap[post.user_id] || {};
     const postLikes = (likes || []).filter(function(l) { return l.post_id === post.id; });
     const liked = currentUser && postLikes.some(function(l) { return l.user_id === currentUser.id; });
@@ -756,6 +792,10 @@ async function loadPosts(targetId, ownOnly) {
     const isVid = post.media_type === "video" || isVideoUrl(post.image_url);
 
     const privacyBadgeText = post.privacy === "friends" ? "👥 Friends" : (post.privacy === "private" ? "🔒 Private" : "🌐 Public");
+
+    const article = document.createElement("article");
+    article.className = "photo";
+    article.dataset.postId = post.id;
 
     const mediaHtml = isVid ? 
       '<div class="media-container">' +
@@ -782,79 +822,59 @@ async function loadPosts(targetId, ownOnly) {
       return '<div class="comment"><strong>' + escapeHTML(cAuthor) + ':</strong> ' + escapeHTML(c.content) + '</div>';
     }).join("") || '<span class="muted">No comments yet.</span>';
 
-    const ownerButtonsHtml = isOwner ? 
-      '<button class="edit-btn" data-edit-id="' + post.id + '" data-caption="' + escapeHTML(post.caption || "") + '" data-privacy="' + escapeHTML(post.privacy || "public") + '">✏️ Edit</button>' +
-      '<button class="delete-btn" data-delete-id="' + post.id + '" data-storage-path="' + escapeHTML(post.storage_path || "") + '">🗑 Delete</button>' : '';
-
-    return '<article class="photo" data-post-id="' + post.id + '">' +
-        mediaHtml +
-        '<div class="photo-body">' +
-          '<div class="photo-user">' +
-            '<div class="photo-user-left">' +
-              '<img class="avatar" src="' + escapeHTML(profile.avatar_url || fallbackAvatar) + '" alt="Avatar">' +
-              '<strong>' + escapeHTML(profile.display_name || "CloudGallery user") + '</strong>' +
-            '</div>' +
-            '<span class="privacy-badge">' + privacyBadgeText + '</span>' +
+    article.innerHTML = mediaHtml +
+      '<div class="photo-body">' +
+        '<div class="photo-user">' +
+          '<div class="photo-user-left">' +
+            '<img class="avatar" src="' + escapeHTML(profile.avatar_url || fallbackAvatar) + '" alt="Avatar">' +
+            '<strong>' + escapeHTML(profile.display_name || "CloudGallery user") + '</strong>' +
           '</div>' +
-          (post.caption ? '<p class="caption">' + escapeHTML(post.caption) + '</p>' : '') +
-          '<p class="muted">' + new Date(post.created_at).toLocaleDateString() + '</p>' +
-          '<div class="actions">' +
-            '<button class="like ' + (liked ? "liked" : "") + '" data-like="' + post.id + '">♥ ' + postLikes.length + '</button>' +
-            '<button class="comment-button">Comments (' + postComments.length + ')</button>' +
-            ownerButtonsHtml +
-          '</div>' +
-          '<div class="comments">' +
-            commentsListHtml +
-            '<form class="comment-form" data-comment-form="' + post.id + '">' +
-              '<input name="content" maxlength="500" placeholder="' + (currentUser ? "Write a comment..." : "Sign in to comment") + '" ' + (currentUser ? "" : "disabled") + '>' +
-              '<button type="submit" ' + (currentUser ? "" : "disabled") + '>Send</button>' +
-            '</form>' +
-          '</div>' +
+          '<span class="privacy-badge">' + privacyBadgeText + '</span>' +
         '</div>' +
-      '</article>';
-  }).join("");
+        (post.caption ? '<p class="caption">' + escapeHTML(post.caption) + '</p>' : '') +
+        '<p class="muted">' + new Date(post.created_at).toLocaleDateString() + '</p>' +
+        '<div class="actions">' +
+          '<button class="like ' + (liked ? "liked" : "") + '" id="like-btn-' + post.id + '">♥ ' + postLikes.length + '</button>' +
+          '<button class="comment-button">Comments (' + postComments.length + ')</button>' +
+          (isOwner ? '<button class="edit-btn" id="edit-btn-' + post.id + '">✏️ Edit</button><button class="delete-btn" id="del-btn-' + post.id + '">🗑 Delete</button>' : '') +
+        '</div>' +
+        '<div class="comments">' +
+          commentsListHtml +
+          '<form class="comment-form" id="comment-form-' + post.id + '">' +
+            '<input name="content" maxlength="500" placeholder="' + (currentUser ? "Write a comment..." : "Sign in to comment") + '" ' + (currentUser ? "" : "disabled") + '>' +
+            '<button type="submit" ' + (currentUser ? "" : "disabled") + '>Send</button>' +
+          '</form>' +
+        '</div>' +
+      '</div>';
 
-  target.querySelectorAll("[data-edit-id]").forEach(function(button) {
-    button.addEventListener("click", function() {
-      openEditModal(
-        button.dataset.editId,
-        button.dataset.caption,
-        button.dataset.privacy,
-        targetId,
-        ownOnly
-      );
+    article.querySelector("#like-btn-" + post.id).addEventListener("click", function() {
+      toggleLike(post.id, targetId, ownOnly);
     });
-  });
 
-  target.querySelectorAll(".quality-select").forEach(function(select) {
-    select.addEventListener("change", function(e) {
-      const vidId = e.target.dataset.videoId;
+    if (isOwner) {
+      article.querySelector("#edit-btn-" + post.id).addEventListener("click", function() {
+        openEditModal(post.id, post.caption, post.privacy, targetId, ownOnly);
+      });
+      article.querySelector("#del-btn-" + post.id).addEventListener("click", function() {
+        deletePost(post.id, post.storage_path, targetId, ownOnly);
+      });
+    }
+
+    article.querySelector(".quality-select")?.addEventListener("change", function(e) {
       const quality = e.target.value;
-      const videoEl = $("video-" + vidId);
+      const videoEl = $("video-" + post.id);
       if (videoEl) {
         const isPlaying = !videoEl.paused;
-        console.log("Stream resolution adjusted to " + quality + " for video ID: " + vidId);
+        console.log("Stream resolution adjusted to " + quality + " for video ID: " + post.id);
         if (isPlaying) videoEl.play();
       }
     });
-  });
 
-  target.querySelectorAll("[data-like]").forEach(function(button) {
-    button.addEventListener("click", function() {
-      toggleLike(Number(button.dataset.like), targetId, ownOnly);
+    article.querySelector("#comment-form-" + post.id).addEventListener("submit", function(event) {
+      addComment(event, post.id, targetId, ownOnly);
     });
-  });
 
-  target.querySelectorAll("[data-delete-id]").forEach(function(button) {
-    button.addEventListener("click", function() {
-      deletePost(button.dataset.deleteId, button.dataset.storagePath, targetId, ownOnly);
-    });
-  });
-
-  target.querySelectorAll("[data-comment-form]").forEach(function(form) {
-    form.addEventListener("submit", function(event) {
-      addComment(event, Number(form.dataset.commentForm), targetId, ownOnly);
-    });
+    target.appendChild(article);
   });
 }
 
