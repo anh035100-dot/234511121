@@ -13,8 +13,9 @@ body{font-family:Arial,sans-serif;background:#f5f7fb;color:#182230}
 button{border:0;border-radius:10px;padding:11px 17px;background:#536dfe;color:white;cursor:pointer;font-weight:600;transition:background 0.2s}
 button:hover{background:#4055d6}
 button:disabled{opacity:.5;cursor:not-allowed}
-input,textarea,select{font:inherit;border:1px solid #dfe3ed;border-radius:99px;padding:12px;width:100%;outline:none}
+input,textarea,select{font:inherit;border:1px solid #dfe3ed;border-radius:9px;padding:12px;width:100%;outline:none}
 input:focus,textarea:focus,select:focus{border-color:#536dfe}
+textarea{resize:vertical;min-height:90px}
 #fileInput,#captionInput,#privacyInput{border-radius:9px}
 header{background:white;padding:17px 6%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:5}
 header h1{color:#536dfe;font-size:25px}
@@ -48,9 +49,10 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .like:hover{background:#ffe1e7}
 .like.liked{background:#ffdce6;color:#b01d46}
 .comment-button{background:#eef0ff;color:#4055d6;padding:8px 12px;cursor:default}
+.edit-btn{background:#eef0ff;color:#4055d6;padding:8px 12px}
+.edit-btn:hover{background:#e0e4ff}
 .delete-btn{background:#fee2e2;color:#dc2626;padding:8px 12px}
 .delete-btn:hover{background:#fca5a5}
-.privacy-select-inline{padding:7px 10px;font-size:12px;border-radius:8px;background:#f1f5f9;border:1px solid #cbd5e1;color:#334155;width:auto;cursor:pointer}
 .comments{border-top:1px solid #eee;margin-top:12px;padding-top:10px}
 .comment{font-size:13px;margin:8px 0;overflow-wrap:anywhere}
 .comment-form{display:flex;gap:6px;margin-top:10px}
@@ -173,6 +175,30 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
   </div>
 </div>
 
+<!-- EDIT POST MODAL -->
+<div id="editModal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Edit Post</h2>
+    <p class="muted" style="margin-bottom:15px">Update your caption or privacy setting.</p>
+    
+    <label class="muted" style="display:block;margin-bottom:5px;font-size:13px;font-weight:600">Caption</label>
+    <textarea id="editCaptionInput" maxlength="300" placeholder="Write a caption..."></textarea>
+
+    <label class="muted" style="display:block;margin-top:12px;margin-bottom:5px;font-size:13px;font-weight:600">Privacy setting</label>
+    <select id="editPrivacyInput">
+      <option value="public">🌐 Public (Everyone)</option>
+      <option value="friends">👥 Friends only</option>
+      <option value="private">🔒 Private (Only me)</option>
+    </select>
+
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button id="cancelEditBtn" class="btn-secondary" style="flex:1">Cancel</button>
+      <button id="saveEditBtn" style="flex:1">Save Changes</button>
+    </div>
+    <p id="editStatus" class="status"></p>
+  </div>
+</div>
+
 <!-- EXPLORE WORLD POP-UP MODAL -->
 <div id="exploreModal" class="modal-backdrop hidden">
   <div class="explore-window">
@@ -215,6 +241,7 @@ const fallbackAvatar = "https://www.gravatar.com/avatar/?d=mp";
 let currentUser = null;
 let currentProfile = null;
 let activeView = "gallery";
+let editingPostId = null;
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -455,7 +482,7 @@ async function loadPosts(targetId, ownOnly = false) {
     `;
 
     return `
-      <article class="photo">
+      <article class="photo" data-post-id="${post.id}">
         ${mediaHtml}
 
         <div class="photo-body">
@@ -478,11 +505,7 @@ async function loadPosts(targetId, ownOnly = false) {
               Comments (${postComments.length})
             </button>
             ${isOwner ? `
-              <select class="privacy-select-inline" data-privacy-id="${post.id}" title="Change Privacy">
-                <option value="public" ${post.privacy === 'public' ? 'selected' : ''}>🌐 Public</option>
-                <option value="friends" ${post.privacy === 'friends' ? 'selected' : ''}>👥 Friends</option>
-                <option value="private" ${post.privacy === 'private' ? 'selected' : ''}>🔒 Private</option>
-              </select>
+              <button class="edit-btn" data-edit-id="${post.id}" data-caption="${escapeHTML(post.caption || '')}" data-privacy="${escapeHTML(post.privacy || 'public')}">✏️ Edit</button>
               <button class="delete-btn" data-delete-id="${post.id}" data-storage-path="${escapeHTML(post.storage_path || '')}">🗑 Delete</button>
             ` : ""}
           </div>
@@ -507,11 +530,15 @@ async function loadPosts(targetId, ownOnly = false) {
     `;
   }).join("");
 
-  target.querySelectorAll(".privacy-select-inline").forEach(select => {
-    select.addEventListener("change", async (e) => {
-      const postId = e.target.dataset.privacyId;
-      const newPrivacy = e.target.value;
-      await updatePostPrivacy(postId, newPrivacy, targetId, ownOnly);
+  target.querySelectorAll("[data-edit-id]").forEach(button => {
+    button.addEventListener("click", () => {
+      openEditModal(
+        button.dataset.editId,
+        button.dataset.caption,
+        button.dataset.privacy,
+        targetId,
+        ownOnly
+      );
     });
   });
 
@@ -547,20 +574,51 @@ async function loadPosts(targetId, ownOnly = false) {
   });
 }
 
-async function updatePostPrivacy(postId, newPrivacy, targetId, ownOnly) {
-  if (!currentUser) return showLogin();
+function openEditModal(postId, caption, privacy, targetId, ownOnly) {
+  editingPostId = postId;
+  $("editCaptionInput").value = caption || "";
+  $("editPrivacyInput").value = privacy || "public";
+  $("editStatus").textContent = "";
+  $("editModal").classList.remove("hidden");
 
-  const { error } = await db.from("posts")
-    .update({ privacy: newPrivacy, is_public: newPrivacy === "public" })
-    .eq("id", postId)
-    .eq("user_id", currentUser.id);
+  // Save handler attachment helper
+  const saveBtn = $("saveEditBtn");
+  const newSaveBtn = saveBtn.cloneNode(true);
+  saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
 
-  if (error) {
-    alert("Could not update privacy: " + error.message);
-  } else {
-    await loadPosts(targetId, ownOnly);
-  }
+  $("saveEditBtn").addEventListener("click", async () => {
+    const newCaption = $("editCaptionInput").value.trim();
+    const newPrivacy = $("editPrivacyInput").value;
+
+    $("saveEditBtn").disabled = true;
+    $("editStatus").textContent = "Saving changes...";
+
+    const { error } = await db.from("posts")
+      .update({
+        caption: newCaption,
+        privacy: newPrivacy,
+        is_public: newPrivacy === "public"
+      })
+      .eq("id", editingPostId)
+      .eq("user_id", currentUser.id);
+
+    $("saveEditBtn").disabled = false;
+
+    if (error) {
+      $("editStatus").textContent = "Error: " + error.message;
+    } else {
+      $("editStatus").textContent = "Updated successfully!";
+      setTimeout(() => {
+        $("editModal").classList.add("hidden");
+        loadPosts(targetId, ownOnly);
+      }, 500);
+    }
+  });
 }
+
+$("cancelEditBtn").addEventListener("click", () => {
+  $("editModal").classList.add("hidden");
+});
 
 async function deletePost(postId, storagePath, targetId, ownOnly) {
   if (!currentUser) return showLogin();
@@ -780,6 +838,10 @@ $("exploreModal").addEventListener("click", event => {
 
 $("confirmModal").addEventListener("click", event => {
   if (event.target === $("confirmModal")) $("confirmModal").classList.add("hidden");
+});
+
+$("editModal").addEventListener("click", event => {
+  if (event.target === $("editModal")) $("editModal").classList.add("hidden");
 });
 
 $("saveProfileButton").addEventListener("click", saveProfile);
