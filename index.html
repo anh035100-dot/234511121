@@ -9,26 +9,26 @@
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;background:#f5f7fb;color:#182230}
+body{font-family:Arial,sans-serif;background:#f5f7fb;color:#182230;background-size:cover;background-position:center;background-attachment:fixed;transition:background 0.3s}
 button{border:0;border-radius:10px;padding:11px 17px;background:#536dfe;color:white;cursor:pointer;font-weight:600;transition:background 0.2s}
 button:hover{background:#4055d6}
 button:disabled{opacity:.5;cursor:not-allowed}
-input,textarea,select{font:inherit;border:1px solid #dfe3ed;border-radius:9px;padding:12px;width:100%;outline:none}
+input,textarea,select{font:inherit;border:1px solid #dfe3ed;border-radius:9px;padding:12px;width:100%;outline:none;background:white}
 input:focus,textarea:focus,select:focus{border-color:#536dfe}
 textarea{resize:vertical;min-height:90px}
 #fileInput,#captionInput,#privacyInput{border-radius:9px}
-header{background:white;padding:17px 6%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:5}
+header{background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);padding:17px 6%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:5}
 header h1{color:#536dfe;font-size:25px}
 .header-right{display:flex;align-items:center;gap:12px}
 .avatar{width:35px;height:35px;border-radius:50%;object-fit:cover;background:#e9ecff}
 main{max-width:1150px;margin:35px auto;padding:20px}
-.hero{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:30px}
+.hero{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:30px;background:rgba(255,255,255,0.9);padding:20px;border-radius:15px;border:1px solid #e7eaf1}
 .hero h2{font-size:34px;margin-bottom:10px}
 .muted{color:#718096;font-size:14px}
-.section{background:white;border:1px solid #e7eaf1;border-radius:15px;padding:22px;margin-bottom:25px}
+.section{background:rgba(255,255,255,0.95);border:1px solid #e7eaf1;border-radius:15px;padding:22px;margin-bottom:25px;box-shadow:0 4px 6px rgba(0,0,0,0.02)}
 .section h2{margin-bottom:12px}
 .tabs{display:flex;gap:10px;margin:20px 0;flex-wrap:wrap}
-.tab{background:transparent;color:#68738a}
+.tab{background:rgba(255,255,255,0.8);color:#68738a}
 .tab.active{background:#e9ecff;color:#4055d6}
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
 .photo{background:white;border:1px solid #e7eaf1;border-radius:14px;overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,0.02);position:relative}
@@ -85,7 +85,7 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .btn-danger{background:#fee2e2;color:#dc2626}
 .btn-danger:hover{background:#fca5a5}
 #uploadPanel{display:none}
-footer{text-align:center;padding:30px;color:#94a3b8}
+footer{text-align:center;padding:30px;color:#94a3b8;background:rgba(255,255,255,0.8);margin-top:40px}
 @media(max-width:650px){
 header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 .hero h2{font-size:27px}main{margin:15px auto;padding:12px}
@@ -139,7 +139,7 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 
   <section id="gallerySection">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
-      <h2>🖼️ My Online Gallery</h2>
+      <h2 style="background:rgba(255,255,255,0.9);padding:8px 16px;border-radius:10px">🖼️ My Online Gallery</h2>
       <button id="openExploreButton">🌍 Explore World Media</button>
     </div>
     <div id="myGallery" class="gallery">
@@ -169,6 +169,7 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
     </div>
   </section>
 
+  <!-- PROFILE CUSTOMIZATION SECTION -->
   <section id="profileSection" class="section hidden">
     <div class="profile-header">
       <img id="profileAvatar" class="avatar" alt="Profile">
@@ -177,11 +178,28 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
         <p id="profileEmail" class="muted"></p>
       </div>
     </div>
-    <label class="muted">Display name</label>
-    <input id="displayName" maxlength="40" placeholder="Your display name" style="margin:8px 0 12px">
-    <button id="saveProfileButton">Save profile</button>
+
+    <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Display name</label>
+    <input id="displayName" maxlength="40" placeholder="Your display name" style="margin-top:5px">
+
+    <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Avatar Image URL</label>
+    <input id="avatarUrlInput" placeholder="https://example.com/avatar.jpg" style="margin-top:5px">
+
+    <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Background Image URL</label>
+    <input id="bgUrlInput" placeholder="https://images.unsplash.com/photo-..." style="margin-top:5px">
+
+    <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+      <div>
+        <label class="muted" style="display:block;font-size:13px;font-weight:600">Background Solid Color</label>
+        <input type="color" id="bgColorInput" value="#f5f7fb" style="width:60px;height:40px;padding:2px;cursor:pointer;margin-top:5px">
+      </div>
+      <button id="clearBgBtn" class="btn-secondary" style="margin-top:18px;padding:9px 14px;font-size:12px">Reset to Default</button>
+    </div>
+
+    <button id="saveProfileButton" style="margin-top:20px">Save Profile & Theme</button>
     <p id="profileStatus" class="status"></p>
-    <h3 style="margin-top:25px">My uploads</h3>
+
+    <h3 style="margin-top:30px">My Uploads</h3>
     <div id="profileGallery" class="gallery" style="margin-top:15px"></div>
   </section>
 </main>
@@ -280,6 +298,19 @@ function isVideoUrl(url) {
   return /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(url) || url?.includes("/video/");
 }
 
+function applyUserBackground(bgUrl, bgColor) {
+  if (bgUrl && bgUrl.trim()) {
+    document.body.style.backgroundImage = `url("${bgUrl.trim()}")`;
+    document.body.style.backgroundColor = bgColor || "#f5f7fb";
+  } else if (bgColor) {
+    document.body.style.backgroundImage = "none";
+    document.body.style.backgroundColor = bgColor;
+  } else {
+    document.body.style.backgroundImage = "none";
+    document.body.style.backgroundColor = "#f5f7fb";
+  }
+}
+
 function showLogin() {
   $("loginModal").classList.remove("hidden");
 }
@@ -368,38 +399,52 @@ async function loadProfile() {
   $("profileHeading").textContent = name;
   $("profileEmail").textContent = currentUser.email || "";
   $("displayName").value = name;
+  $("avatarUrlInput").value = data?.avatar_url || "";
+  $("bgUrlInput").value = data?.bg_url || "";
+  $("bgColorInput").value = data?.bg_color || "#f5f7fb";
   $("profileAvatar").src = avatar;
   $("headerAvatar").src = avatar;
+
+  applyUserBackground(data?.bg_url, data?.bg_color);
 }
 
 async function saveProfile() {
   if (!currentUser) return showLogin();
 
   const display_name = $("displayName").value.trim();
+  const avatar_url = $("avatarUrlInput").value.trim() || currentProfile?.avatar_url || currentUser.user_metadata?.avatar_url || null;
+  const bg_url = $("bgUrlInput").value.trim() || null;
+  const bg_color = $("bgColorInput").value || "#f5f7fb";
+
   if (!display_name) {
     $("profileStatus").textContent = "Please enter a display name.";
     return;
   }
 
-  const avatar_url = currentProfile?.avatar_url ||
-    currentUser.user_metadata?.avatar_url || null;
-
   const { error } = await db.from("profiles").upsert({
     id: currentUser.id,
     display_name,
     avatar_url,
+    bg_url,
+    bg_color,
     updated_at: new Date().toISOString()
   });
 
   $("profileStatus").textContent = error
     ? error.message
-    : "Profile saved successfully!";
+    : "Profile & background saved successfully!";
 
   if (!error) {
     await loadProfile();
-    await loadPosts("myGallery", true);
+    await loadPosts("myGallery", false);
   }
 }
+
+$("clearBgBtn").addEventListener("click", () => {
+  $("bgUrlInput").value = "";
+  $("bgColorInput").value = "#f5f7fb";
+  applyUserBackground("", "#f5f7fb");
+});
 
 /* FRIENDS SYSTEM FUNCTIONS */
 async function loadFriendsView() {
