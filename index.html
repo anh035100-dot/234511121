@@ -16,7 +16,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 input,textarea,select{font:inherit;border:1px solid #dfe3ed;border-radius:9px;padding:12px;width:100%;outline:none;background:white}
 input:focus,textarea:focus,select:focus{border-color:#536dfe}
 textarea{resize:vertical;min-height:90px}
-#fileInput,#captionInput,#privacyInput{border-radius:9px}
+#fileInput,#captionInput,#privacyInput,#avatarFileInput,#bgFileInput{border-radius:9px}
 header{background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);padding:17px 6%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:5}
 header h1{color:#536dfe;font-size:25px}
 .header-right{display:flex;align-items:center;gap:12px}
@@ -182,18 +182,18 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
     <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Display name</label>
     <input id="displayName" maxlength="40" placeholder="Your display name" style="margin-top:5px">
 
-    <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Avatar Image URL</label>
-    <input id="avatarUrlInput" placeholder="https://example.com/avatar.jpg" style="margin-top:5px">
+    <label class="muted" style="display:block;margin-top:15px;font-size:13px;font-weight:600">Upload New Avatar Image</label>
+    <input type="file" id="avatarFileInput" accept="image/*" style="margin-top:5px">
 
-    <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Background Image URL</label>
-    <input id="bgUrlInput" placeholder="https://images.unsplash.com/photo-..." style="margin-top:5px">
+    <label class="muted" style="display:block;margin-top:15px;font-size:13px;font-weight:600">Upload New Background Image</label>
+    <input type="file" id="bgFileInput" accept="image/*" style="margin-top:5px">
 
-    <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+    <div style="display:flex;align-items:center;gap:12px;margin-top:15px">
       <div>
-        <label class="muted" style="display:block;font-size:13px;font-weight:600">Background Solid Color</label>
+        <label class="muted" style="display:block;font-size:13px;font-weight:600">Or Solid Background Color</label>
         <input type="color" id="bgColorInput" value="#f5f7fb" style="width:60px;height:40px;padding:2px;cursor:pointer;margin-top:5px">
       </div>
-      <button id="clearBgBtn" class="btn-secondary" style="margin-top:18px;padding:9px 14px;font-size:12px">Reset to Default</button>
+      <button id="clearBgBtn" class="btn-secondary" style="margin-top:18px;padding:9px 14px;font-size:12px">Reset Background</button>
     </div>
 
     <button id="saveProfileButton" style="margin-top:20px">Save Profile & Theme</button>
@@ -399,8 +399,6 @@ async function loadProfile() {
   $("profileHeading").textContent = name;
   $("profileEmail").textContent = currentUser.email || "";
   $("displayName").value = name;
-  $("avatarUrlInput").value = data?.avatar_url || "";
-  $("bgUrlInput").value = data?.bg_url || "";
   $("bgColorInput").value = data?.bg_color || "#f5f7fb";
   $("profileAvatar").src = avatar;
   $("headerAvatar").src = avatar;
@@ -412,38 +410,87 @@ async function saveProfile() {
   if (!currentUser) return showLogin();
 
   const display_name = $("displayName").value.trim();
-  const avatar_url = $("avatarUrlInput").value.trim() || currentProfile?.avatar_url || currentUser.user_metadata?.avatar_url || null;
-  const bg_url = $("bgUrlInput").value.trim() || null;
-  const bg_color = $("bgColorInput").value || "#f5f7fb";
-
   if (!display_name) {
     $("profileStatus").textContent = "Please enter a display name.";
     return;
   }
 
-  const { error } = await db.from("profiles").upsert({
-    id: currentUser.id,
-    display_name,
-    avatar_url,
-    bg_url,
-    bg_color,
-    updated_at: new Date().toISOString()
-  });
+  $("saveProfileButton").disabled = true;
+  $("profileStatus").textContent = "Saving profile and uploading images...";
 
-  $("profileStatus").textContent = error
-    ? error.message
-    : "Profile & background saved successfully!";
+  let avatar_url = currentProfile?.avatar_url || currentUser.user_metadata?.avatar_url || null;
+  let bg_url = currentProfile?.bg_url || null;
 
-  if (!error) {
+  const avatarFile = $("avatarFileInput").files[0];
+  const bgFile = $("bgFileInput").files[0];
+
+  try {
+    // Upload avatar if selected
+    if (avatarFile) {
+      const safeName = avatarFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${currentUser.id}/avatar-${crypto.randomUUID()}-${safeName}`;
+      const { error: upErr } = await db.storage.from(BUCKET).upload(path, avatarFile, { upsert: true });
+      if (upErr) throw new Error("Avatar upload failed: " + upErr.message);
+      const { data: pub } = db.storage.from(BUCKET).getPublicUrl(path);
+      avatar_url = pub.publicUrl;
+    }
+
+    // Upload background image if selected
+    if (bgFile) {
+      const safeName = bgFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${currentUser.id}/bg-${crypto.randomUUID()}-${safeName}`;
+      const { error: upErr } = await db.storage.from(BUCKET).upload(path, bgFile, { upsert: true });
+      if (upErr) throw new Error("Background upload failed: " + upErr.message);
+      const { data: pub } = db.storage.from(BUCKET).getPublicUrl(path);
+      bg_url = pub.publicUrl;
+    }
+
+    const bg_color = $("bgColorInput").value || "#f5f7fb";
+
+    const { error } = await db.from("profiles").upsert({
+      id: currentUser.id,
+      display_name,
+      avatar_url,
+      bg_url,
+      bg_color,
+      updated_at: new Date().toISOString()
+    });
+
+    if (error) throw error;
+
+    $("profileStatus").textContent = "Profile & background updated successfully!";
+    $("avatarFileInput").value = "";
+    $("bgFileInput").value = "";
+
     await loadProfile();
     await loadPosts("myGallery", false);
+
+  } catch (err) {
+    $("profileStatus").textContent = "Error: " + err.message;
+  } finally {
+    $("saveProfileButton").disabled = false;
   }
 }
 
-$("clearBgBtn").addEventListener("click", () => {
-  $("bgUrlInput").value = "";
+$("clearBgBtn").addEventListener("click", async () => {
+  if (!currentUser) return showLogin();
+  $("bgFileInput").value = "";
   $("bgColorInput").value = "#f5f7fb";
-  applyUserBackground("", "#f5f7fb");
+  
+  const { error } = await db.from("profiles").upsert({
+    id: currentUser.id,
+    display_name: currentProfile?.display_name || "CloudGallery user",
+    avatar_url: currentProfile?.avatar_url,
+    bg_url: null,
+    bg_color: "#f5f7fb",
+    updated_at: new Date().toISOString()
+  });
+
+  if (!error) {
+    applyUserBackground(null, "#f5f7fb");
+    $("profileStatus").textContent = "Background reset to default!";
+    await loadProfile();
+  }
 });
 
 /* FRIENDS SYSTEM FUNCTIONS */
