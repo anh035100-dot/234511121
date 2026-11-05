@@ -111,10 +111,10 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 
   <section id="gallerySection">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
-      <h2 style="background:rgba(255,255,255,0.9);padding:8px 16px;border-radius:10px">🖼️ My Online Gallery</h2>
+      <button id="toggleGalleryBtn" style="background:rgba(255,255,255,0.9);color:#182230;font-weight:600;border:1px solid #e7eaf1">🖼️ Show Gallery Feed</button>
       <button id="openExploreButton">🌍 Explore World Media</button>
     </div>
-    <div id="myGallery" class="gallery">
+    <div id="myGallery" class="gallery hidden">
       <div class="empty">Loading gallery...</div>
     </div>
   </section>
@@ -298,6 +298,7 @@ let currentUser = null;
 let currentProfile = null;
 let activeView = "gallery";
 let editingPostId = null;
+let isGalleryVisible = false;
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -499,6 +500,16 @@ $("clearBgBtn").addEventListener("click", async () => {
     applyUserBackground(null, "#f5f7fb");
     $("profileStatus").textContent = "Background reset to default!";
     await loadProfile();
+  }
+});
+
+/* TOGGLE GALLERY FEED VISIBILITY */
+$("toggleGalleryBtn").addEventListener("click", () => {
+  isGalleryVisible = !isGalleryVisible;
+  $("myGallery").classList.toggle("hidden", !isGalleryVisible);
+  $("toggleGalleryBtn").textContent = isGalleryVisible ? "🖼️ Hide Gallery Feed" : "🖼️ Show Gallery Feed";
+  if (isGalleryVisible) {
+    loadPosts("myGallery", false);
   }
 });
 
@@ -917,7 +928,7 @@ async function deletePost(postId, storagePath, targetId, ownOnly) {
       }
     }
 
-    await loadPosts(targetId, ownOnly);
+    if (isGalleryVisible) await loadPosts(targetId, ownOnly);
 
   } catch (err) {
     alert("Error deleting media: " + err.message);
@@ -944,7 +955,7 @@ async function toggleLike(postId, targetId, ownOnly) {
       });
 
   if (result.error) alert("Could not update like: " + result.error.message);
-  await loadPosts(targetId, ownOnly);
+  if (isGalleryVisible) await loadPosts(targetId, ownOnly);
 }
 
 async function addComment(event, postId, targetId, ownOnly) {
@@ -962,7 +973,7 @@ async function addComment(event, postId, targetId, ownOnly) {
   });
 
   if (error) alert("Could not post comment: " + error.message);
-  else await loadPosts(targetId, ownOnly);
+  else if (isGalleryVisible) await loadPosts(targetId, ownOnly);
 }
 
 async function uploadImage() {
@@ -1027,7 +1038,7 @@ async function uploadImage() {
     $("captionInput").value = "";
     $("privacyInput").value = "public";
     $("uploadStatus").textContent = isVid ? "Your 1080p video is now live!" : "Your photo is now live!";
-    await loadPosts("myGallery", false);
+    if (isGalleryVisible) await loadPosts("myGallery", false);
   }
 
   $("uploadButton").disabled = false;
@@ -1065,7 +1076,7 @@ function setView(view) {
     loadProfile();
     loadPosts("profileGallery", true);
   } else {
-    loadPosts("myGallery", false);
+    if (isGalleryVisible) loadPosts("myGallery", false);
   }
 }
 
@@ -1084,8 +1095,8 @@ async function updateAuthUI() {
     await loadFriendsView();
   } else if (activeView === "profile" && currentUser) {
     await loadPosts("profileGallery", true);
-  } else {
-    loadPosts("myGallery", false);
+  } else if (isGalleryVisible) {
+    await loadPosts("myGallery", false);
   }
 }
 
@@ -1113,7 +1124,7 @@ $("confirmModal").addEventListener("click", event => {
 });
 
 $("editModal").addEventListener("click", event => {
-  if (event.target === $("editModal")) $("editModal").classList.add("hidden");
+  if (event.target === $("editModal")) $("editModal"].classList.add("hidden");
 });
 
 $("saveProfileButton").addEventListener("click", saveProfile);
