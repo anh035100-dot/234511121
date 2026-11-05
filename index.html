@@ -16,7 +16,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 input,textarea,select{font:inherit;border:1px solid #dfe3ed;border-radius:9px;padding:12px;width:100%;outline:none;background:white}
 input:focus,textarea:focus,select:focus{border-color:#536dfe}
 textarea{resize:vertical;min-height:90px}
-#fileInput,#captionInput,#privacyInput,#avatarFileInput,#bgFileInput{border-radius:9px}
+#fileInput,#captionInput,#privacyInput,#avatarFileInput,#bgFileInput,#iconFileInput{border-radius:9px}
 header{background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);padding:17px 6%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:5}
 header h1{color:#536dfe;font-size:25px}
 .header-right{display:flex;align-items:center;gap:12px}
@@ -66,6 +66,7 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .status{margin-top:12px;color:#64748b;font-size:13px;min-height:18px}
 .profile-header{display:flex;align-items:center;gap:15px;margin-bottom:18px}
 .profile-header .avatar{width:65px;height:65px}
+.app-icon-preview{width:36px;height:36px;border-radius:10px;object-fit:cover;display:inline-block;vertical-align:middle;background:#e9ecff}
 .hidden{display:none!important}
 .modal-backdrop{position:fixed;inset:0;background:rgba(16,24,43,0.6);z-index:20;display:flex;align-items:center;justify-content:center;padding:15px}
 .modal{background:white;width:min(430px,100%);padding:25px;border-radius:18px}
@@ -91,7 +92,8 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .explore-quick-btn:hover{transform:translateY(-2px);background:white}
 .app-launcher-icon{background:linear-gradient(135deg, #536dfe, #4055d6);color:white;padding:10px 16px;border-radius:16px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(83,109,254,0.4);cursor:pointer;transition:transform 0.2s, box-shadow 0.2s;font-weight:600;font-size:14px}
 .app-launcher-icon:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(83,109,254,0.6)}
-.app-launcher-icon .app-icon-badge{background:white;color:#536dfe;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.app-launcher-icon .app-icon-badge{background:white;color:#536dfe;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden}
+.app-launcher-icon .app-icon-badge img{width:100%;height:100%;object-fit:cover}
 
 /* APP DRAWER MODAL WINDOW */
 .app-drawer-window{width:min(700px,100%);max-height:85vh;overflow-y:auto;background:white;border-radius:18px;padding:25px;box-shadow:0 10px 25px rgba(0,0,0,0.2)}
@@ -114,7 +116,7 @@ main{max-width:1150px;margin:35px auto;padding:20px}
   <div class="bottom-floating-bar">
     <button id="openExploreButton" class="explore-quick-btn">🌍 Explore World Media</button>
     <div id="openAppDrawerBtn" class="app-launcher-icon" title="Open CloudGallery App Menu">
-      <div class="app-icon-badge">☁️</div>
+      <div id="launcherBadge" class="app-icon-badge">☁️</div>
       <span>CloudGallery App</span>
     </div>
   </div>
@@ -199,6 +201,13 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 
       <label class="muted" style="display:block;margin-top:15px;font-size:13px;font-weight:600">Upload New Background Image</label>
       <input type="file" id="bgFileInput" accept="image/*" style="margin-top:5px">
+
+      <!-- APP ICON SETTING SECTION -->
+      <label class="muted" style="display:block;margin-top:15px;font-size:13px;font-weight:600">Upload Custom App Launcher Icon</label>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:5px">
+        <input type="file" id="iconFileInput" accept="image/*" style="flex:1">
+        <button id="deleteIconBtn" class="btn-danger" style="padding:11px 16px;font-size:13px;white-space:nowrap">Delete Icon</button>
+      </div>
 
       <div style="display:flex;align-items:center;gap:12px;margin-top:15px">
         <div>
@@ -322,6 +331,15 @@ function applyUserBackground(bgUrl, bgColor) {
   }
 }
 
+function applyAppIcon(iconUrl) {
+  const badge = $("launcherBadge");
+  if (iconUrl && iconUrl.trim()) {
+    badge.innerHTML = `<img src="${escapeHTML(iconUrl.trim())}" alt="App Icon">`;
+  } else {
+    badge.innerHTML = "☁️";
+  }
+}
+
 function showLogin() {
   $("loginModal").classList.remove("hidden");
 }
@@ -415,6 +433,7 @@ async function loadProfile() {
   $("headerAvatar").src = avatar;
 
   applyUserBackground(data?.bg_url, data?.bg_color);
+  applyAppIcon(data?.icon_url);
 }
 
 async function saveProfile() {
@@ -431,9 +450,11 @@ async function saveProfile() {
 
   let avatar_url = currentProfile?.avatar_url || currentUser.user_metadata?.avatar_url || null;
   let bg_url = currentProfile?.bg_url || null;
+  let icon_url = currentProfile?.icon_url || null;
 
   const avatarFile = $("avatarFileInput").files[0];
   const bgFile = $("bgFileInput").files[0];
+  const iconFile = $("iconFileInput").files[0];
 
   try {
     if (avatarFile) {
@@ -454,6 +475,15 @@ async function saveProfile() {
       bg_url = pub.publicUrl;
     }
 
+    if (iconFile) {
+      const safeName = iconFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${currentUser.id}/icon-${crypto.randomUUID()}-${safeName}`;
+      const { error: upErr } = await db.storage.from(BUCKET).upload(path, iconFile, { upsert: true });
+      if (upErr) throw new Error("Icon upload failed: " + upErr.message);
+      const { data: pub } = db.storage.from(BUCKET).getPublicUrl(path);
+      icon_url = pub.publicUrl;
+    }
+
     const bg_color = $("bgColorInput").value || "#f5f7fb";
 
     const { error } = await db.from("profiles").upsert({
@@ -461,15 +491,17 @@ async function saveProfile() {
       display_name,
       avatar_url,
       bg_url,
+      icon_url,
       bg_color,
       updated_at: new Date().toISOString()
     });
 
     if (error) throw error;
 
-    $("profileStatus").textContent = "Profile & background updated successfully!";
+    $("profileStatus").textContent = "Profile & settings updated successfully!";
     $("avatarFileInput").value = "";
     $("bgFileInput").value = "";
+    $("iconFileInput").value = "";
 
     await loadProfile();
   } catch (err) {
@@ -478,6 +510,27 @@ async function saveProfile() {
     $("saveProfileButton").disabled = false;
   }
 }
+
+$("deleteIconBtn").addEventListener("click", async () => {
+  if (!currentUser) return showLogin();
+  $("iconFileInput").value = "";
+
+  const { error } = await db.from("profiles").upsert({
+    id: currentUser.id,
+    display_name: currentProfile?.display_name || "CloudGallery user",
+    avatar_url: currentProfile?.avatar_url,
+    bg_url: currentProfile?.bg_url,
+    icon_url: null,
+    bg_color: currentProfile?.bg_color || "#f5f7fb",
+    updated_at: new Date().toISOString()
+  });
+
+  if (!error) {
+    applyAppIcon(null);
+    $("profileStatus").textContent = "App icon deleted successfully!";
+    await loadProfile();
+  }
+});
 
 $("clearBgBtn").addEventListener("click", async () => {
   if (!currentUser) return showLogin();
@@ -489,6 +542,7 @@ $("clearBgBtn").addEventListener("click", async () => {
     display_name: currentProfile?.display_name || "CloudGallery user",
     avatar_url: currentProfile?.avatar_url,
     bg_url: null,
+    icon_url: currentProfile?.icon_url,
     bg_color: "#f5f7fb",
     updated_at: new Date().toISOString()
   });
@@ -1101,11 +1155,11 @@ $("exploreModal").addEventListener("click", event => {
 });
 
 $("confirmModal").addEventListener("click", event => {
-  if (event.target === $("confirmModal")) $("confirmModal").classList.add("hidden");
+  if (event.target === $("confirmModal")) $("confirmModal"].classList.add("hidden");
 });
 
 $("editModal").addEventListener("click", event => {
-  if (event.target === $("editModal")) $("editModal").classList.add("hidden");
+  if (event.target === $("editModal")) $("editModal"].classList.add("hidden");
 });
 
 $("saveProfileButton").addEventListener("click", saveProfile);
