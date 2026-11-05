@@ -108,14 +108,33 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 </header>
 
 <main>
-  <!-- COLLAPSIBLE HERO / BANNER -->
-  <section id="heroSection" class="hero hidden">
-    <div>
-      <h2>Your photos & 1080p videos, everywhere.</h2>
-      <p class="muted">Upload, store and stream your favorite content in high definition.</p>
-    </div>
-    <button id="closeHeroBtn" class="btn-secondary" style="padding:6px 12px;font-size:12px">✕ Hide</button>
-  </section>
+  <!-- COLLAPSED MENU CONTENT (HERO + UPLOAD + FOOTER) -->
+  <div id="drawerContainer" class="hidden" style="margin-bottom:25px">
+    <section class="hero" style="margin-bottom:15px">
+      <div>
+        <h2>Your photos & 1080p videos, everywhere.</h2>
+        <p class="muted">Upload, store and stream your favorite content in high definition.</p>
+      </div>
+      <button id="closeHeroBtn" class="btn-secondary" style="padding:6px 12px;font-size:12px">✕ Hide</button>
+    </section>
+
+    <section id="uploadPanel" class="section" style="margin-bottom:0">
+      <h2>Upload media (Photos or HD Videos)</h2>
+      <p class="muted">Share files with the CloudGallery community (Videos up to 100MB).</p>
+      <input type="file" id="fileInput" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime" style="margin-top:15px">
+      <input id="captionInput" maxlength="300" placeholder="Write a caption (optional)" style="margin-top:12px">
+      
+      <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Privacy setting</label>
+      <select id="privacyInput" style="margin-top:5px">
+        <option value="public">🌐 Public (Everyone)</option>
+        <option value="friends">👥 Friends only</option>
+        <option value="private">🔒 Private (Only me)</option>
+      </select>
+
+      <button id="uploadButton" style="margin-top:15px">Upload media</button>
+      <p id="uploadStatus" class="status"></p>
+    </section>
+  </div>
 
   <nav class="tabs">
     <button class="tab active" data-view="gallery">My Online Gallery</button>
@@ -123,24 +142,6 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
     <button class="tab" data-view="profile">My Profile</button>
     <button id="toggleAppDrawerBtn" class="app-drawer-btn hidden">📱 <span>Open App Menu</span></button>
   </nav>
-
-  <!-- UPLOAD PANEL (COLLAPSED BY DEFAULT / TOGGLEABLE) -->
-  <section id="uploadPanel" class="section hidden">
-    <h2>Upload media (Photos or HD Videos)</h2>
-    <p class="muted">Share files with the CloudGallery community (Videos up to 100MB).</p>
-    <input type="file" id="fileInput" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime" style="margin-top:15px">
-    <input id="captionInput" maxlength="300" placeholder="Write a caption (optional)" style="margin-top:12px">
-    
-    <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Privacy setting</label>
-    <select id="privacyInput" style="margin-top:5px">
-      <option value="public">🌐 Public (Everyone)</option>
-      <option value="friends">👥 Friends only</option>
-      <option value="private">🔒 Private (Only me)</option>
-    </select>
-
-    <button id="uploadButton" style="margin-top:15px">Upload media</button>
-    <p id="uploadStatus" class="status"></p>
-  </section>
 
   <section id="gallerySection">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
@@ -209,7 +210,7 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
   </section>
 </main>
 
-<footer>© 2026 CloudGallery · Your memories in the cloud.</footer>
+<footer id="appFooter" class="hidden">© 2026 CloudGallery · Your memories in the cloud.</footer>
 
 <!-- GOOGLE SIGN-IN MODAL -->
 <div id="loginModal" class="modal-backdrop hidden">
@@ -500,16 +501,16 @@ $("clearBgBtn").addEventListener("click", async () => {
 /* APP DRAWER TOGGLE LOGIC */
 function toggleAppDrawer() {
   isDrawerOpen = !isDrawerOpen;
-  $("heroSection").classList.toggle("hidden", !isDrawerOpen);
-  $("uploadPanel").classList.toggle("hidden", !isDrawerOpen || activeView !== "gallery");
+  $("drawerContainer").classList.toggle("hidden", !isDrawerOpen);
+  $("appFooter").classList.toggle("hidden", !isDrawerOpen);
   $("toggleAppDrawerBtn").querySelector("span").textContent = isDrawerOpen ? "Close Menu" : "Open App Menu";
 }
 
 $("toggleAppDrawerBtn").addEventListener("click", toggleAppDrawer);
 $("closeHeroBtn").addEventListener("click", () => {
   isDrawerOpen = false;
-  $("heroSection").classList.add("hidden");
-  $("uploadPanel").classList.add("hidden");
+  $("drawerContainer").classList.add("hidden");
+  $("appFooter").classList.add("hidden");
   $("toggleAppDrawerBtn").querySelector("span").textContent = "Open App Menu";
 });
 
@@ -1048,9 +1049,9 @@ function setView(view) {
   $("friendsSection").classList.toggle("hidden", view !== "friends");
   $("profileSection").classList.toggle("hidden", view !== "profile");
   
-  // Keep upload panel hidden by default until toggled via app drawer button
-  $("uploadPanel").classList.add("hidden");
   isDrawerOpen = false;
+  $("drawerContainer").classList.add("hidden");
+  $("appFooter").classList.add("hidden");
   $("toggleAppDrawerBtn").querySelector("span").textContent = "Open App Menu";
   $("toggleAppDrawerBtn").classList.toggle("hidden", view !== "gallery");
 
@@ -1110,11 +1111,11 @@ $("exploreModal").addEventListener("click", event => {
 });
 
 $("confirmModal").addEventListener("click", event => {
-  if (event.target === $("confirmModal")) $("confirmModal"].classList.add("hidden");
+  if (event.target === $("confirmModal")) $("confirmModal").classList.add("hidden");
 });
 
 $("editModal").addEventListener("click", event => {
-  if (event.target === $("editModal")) $("editModal"].classList.add("hidden");
+  if (event.target === $("editModal")) $("editModal").classList.add("hidden");
 });
 
 $("saveProfileButton").addEventListener("click", saveProfile);
