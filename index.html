@@ -86,16 +86,12 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .btn-secondary:hover{background:#e0e4ff}
 .btn-danger{background:#fee2e2;color:#dc2626}
 .btn-danger:hover{background:#fca5a5}
-
-/* FLOATING APP LAUNCHER & QUICK EXPLORE CONTAINER */
 .bottom-floating-bar{position:fixed;bottom:25px;right:25px;display:flex;align-items:center;gap:12px;z-index:15}
 .explore-quick-btn{background:rgba(255,255,255,0.95);color:#182230;padding:12px 18px;border-radius:16px;box-shadow:0 4px 15px rgba(0,0,0,0.2);cursor:pointer;font-weight:600;font-size:14px;border:1px solid #e7eaf1;transition:transform 0.2s}
 .explore-quick-btn:hover{transform:translateY(-2px);background:white}
 .app-launcher-icon{background:linear-gradient(135deg, #536dfe, #4055d6);color:white;padding:10px 16px;border-radius:16px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(83,109,254,0.4);cursor:pointer;transition:transform 0.2s, box-shadow 0.2s;font-weight:600;font-size:14px}
 .app-launcher-icon:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(83,109,254,0.6)}
 .app-launcher-icon .app-icon-badge{background:white;color:#536dfe;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
-
-/* APP DRAWER MODAL WINDOW */
 .app-drawer-window{width:min(700px,100%);max-height:85vh;overflow-y:auto;background:white;border-radius:18px;padding:25px;box-shadow:0 10px 25px rgba(0,0,0,0.2)}
 </style>
 </head>
@@ -112,7 +108,6 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 </header>
 
 <main>
-  <!-- FLOATING BOTTOM BAR (EXPLORE BUTTON + APP LAUNCHER) -->
   <div class="bottom-floating-bar">
     <button id="openExploreButton" class="explore-quick-btn">🌍 Explore World Media</button>
     <div id="openAppDrawerBtn" class="app-launcher-icon" title="Open CloudGallery App Menu">
@@ -122,7 +117,6 @@ main{max-width:1150px;margin:35px auto;padding:20px}
   </div>
 </main>
 
-<!-- APP DRAWER POPUP MODAL (CONTAINS ALL TABS & UPLOAD CONTROLS) -->
 <div id="appDrawerModal" class="modal-backdrop hidden">
   <div class="app-drawer-window">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
@@ -143,7 +137,6 @@ main{max-width:1150px;margin:35px auto;padding:20px}
       <button class="tab" data-view="profile">My Profile</button>
     </nav>
 
-    <!-- UPLOAD PANEL (INSIDE DRAWER) -->
     <section id="uploadPanel" class="section" style="border:1px solid #e7eaf1">
       <h2>Upload media (Photos or HD Videos)</h2>
       <p class="muted">Share files with the CloudGallery community (Videos up to 100MB).</p>
@@ -161,7 +154,6 @@ main{max-width:1150px;margin:35px auto;padding:20px}
       <p id="uploadStatus" class="status"></p>
     </section>
 
-    <!-- FRIENDS SECTION (INSIDE DRAWER) -->
     <section id="friendsSection" class="section hidden">
       <h2>👥 Community & Friends</h2>
       <p class="muted">Connect with members to view their "Friends Only" photos and videos.</p>
@@ -183,7 +175,6 @@ main{max-width:1150px;margin:35px auto;padding:20px}
       </div>
     </section>
 
-    <!-- PROFILE CUSTOMIZATION SECTION (INSIDE DRAWER) -->
     <section id="profileSection" class="section hidden">
       <div class="profile-header">
         <img id="profileAvatar" class="avatar" alt="Profile">
@@ -202,7 +193,6 @@ main{max-width:1150px;margin:35px auto;padding:20px}
       <label class="muted" style="display:block;margin-top:15px;font-size:13px;font-weight:600">Upload New Background Image</label>
       <input type="file" id="bgFileInput" accept="image/*" style="margin-top:5px">
 
-      <!-- APP ICON SETTING SECTION -->
       <label class="muted" style="display:block;margin-top:15px;font-size:13px;font-weight:600">Upload Custom App Launcher Icon</label>
       <div style="display:flex;gap:10px;align-items:center;margin-top:5px">
         <input type="file" id="iconFileInput" accept="image/*" style="flex:1">
@@ -226,7 +216,6 @@ main{max-width:1150px;margin:35px auto;padding:20px}
   </div>
 </div>
 
-<!-- GOOGLE SIGN-IN MODAL -->
 <div id="loginModal" class="modal-backdrop hidden">
   <div class="modal">
     <h2>Welcome to CloudGallery!</h2>
@@ -240,7 +229,6 @@ main{max-width:1150px;margin:35px auto;padding:20px}
   </div>
 </div>
 
-<!-- EDIT POST MODAL -->
 <div id="editModal" class="modal-backdrop hidden">
   <div class="modal">
     <h2>Edit Post</h2>
@@ -264,7 +252,6 @@ main{max-width:1150px;margin:35px auto;padding:20px}
   </div>
 </div>
 
-<!-- EXPLORE WORLD POP-UP MODAL -->
 <div id="exploreModal" class="modal-backdrop hidden">
   <div class="explore-window">
     <div class="explore-header">
@@ -279,7 +266,6 @@ main{max-width:1150px;margin:35px auto;padding:20px}
   </div>
 </div>
 
-<!-- CUSTOM IN-WEB CONFIRM MODAL -->
 <div id="confirmModal" class="modal-backdrop hidden">
   <div class="confirm-modal">
     <h3 style="margin-bottom:8px">Delete Item</h3>
@@ -292,11 +278,9 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 </div>
 
 <script>
-/* SUPABASE CONFIGURATION */
 const SUPABASE_URL = "https://pfmwnzarkxzywqlbktfr.supabase.co";
 const SUPABASE_KEY = "sb_publishable_KqJjz8dff0SV-edCQTid4Q_1OGn5FC9";
 const BUCKET = "gallery";
-
 const SITE_URL = "https://anh035100-dot.github.io/CloudGallery/";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -315,12 +299,12 @@ function escapeHTML(value) {
 }
 
 function isVideoUrl(url) {
-  return /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(url) || url?.includes("/video/");
+  return /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(url) || (url && url.includes("/video/"));
 }
 
 function applyUserBackground(bgUrl, bgColor) {
   if (bgUrl && bgUrl.trim()) {
-    document.body.style.backgroundImage = `url("${bgUrl.trim()}")`;
+    document.body.style.backgroundImage = 'url("' + bgUrl.trim() + '")';
     document.body.style.backgroundColor = bgColor || "#f5f7fb";
   } else if (bgColor) {
     document.body.style.backgroundImage = "none";
@@ -334,7 +318,7 @@ function applyUserBackground(bgUrl, bgColor) {
 function applyAppIcon(iconUrl) {
   const badge = $("launcherBadge");
   if (iconUrl && iconUrl.trim()) {
-    badge.innerHTML = `<img src="${escapeHTML(iconUrl.trim())}" alt="App Icon">`;
+    badge.innerHTML = '<img src="' + escapeHTML(iconUrl.trim()) + '" alt="App Icon">';
   } else {
     badge.innerHTML = "☁️";
   }
@@ -372,7 +356,6 @@ function showCustomConfirm(message) {
   });
 }
 
-/* GOOGLE SIGN-IN REDIRECT */
 async function signInWithGoogle() {
   const button = $("googleButton");
   button.disabled = true;
@@ -416,24 +399,23 @@ async function loadProfile() {
 
   currentProfile = data;
 
-  const name = data?.display_name ||
-    currentUser.user_metadata?.full_name ||
-    currentUser.user_metadata?.name ||
+  const name = (data && data.display_name) ||
+    (currentUser.user_metadata && (currentUser.user_metadata.full_name || currentUser.user_metadata.name)) ||
     "CloudGallery user";
 
-  const avatar = data?.avatar_url ||
-    currentUser.user_metadata?.avatar_url ||
+  const avatar = (data && data.avatar_url) ||
+    (currentUser.user_metadata && currentUser.user_metadata.avatar_url) ||
     fallbackAvatar;
 
   $("profileHeading").textContent = name;
   $("profileEmail").textContent = currentUser.email || "";
   $("displayName").value = name;
-  $("bgColorInput").value = data?.bg_color || "#f5f7fb";
+  $("bgColorInput").value = (data && data.bg_color) || "#f5f7fb";
   $("profileAvatar").src = avatar;
   $("headerAvatar").src = avatar;
 
-  applyUserBackground(data?.bg_url, data?.bg_color);
-  applyAppIcon(data?.icon_url);
+  applyUserBackground(data && data.bg_url, data && data.bg_color);
+  applyAppIcon(data && data.icon_url);
 }
 
 async function saveProfile() {
@@ -448,9 +430,9 @@ async function saveProfile() {
   $("saveProfileButton").disabled = true;
   $("profileStatus").textContent = "Saving profile and uploading images...";
 
-  let avatar_url = currentProfile?.avatar_url || currentUser.user_metadata?.avatar_url || null;
-  let bg_url = currentProfile?.bg_url || null;
-  let icon_url = currentProfile?.icon_url || null;
+  let avatar_url = (currentProfile && currentProfile.avatar_url) || (currentUser.user_metadata && currentUser.user_metadata.avatar_url) || null;
+  let bg_url = (currentProfile && currentProfile.bg_url) || null;
+  let icon_url = (currentProfile && currentProfile.icon_url) || null;
 
   const avatarFile = $("avatarFileInput").files[0];
   const bgFile = $("bgFileInput").files[0];
@@ -459,7 +441,7 @@ async function saveProfile() {
   try {
     if (avatarFile) {
       const safeName = avatarFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${currentUser.id}/avatar-${crypto.randomUUID()}-${safeName}`;
+      const path = currentUser.id + "/avatar-" + crypto.randomUUID() + "-" + safeName;
       const { error: upErr } = await db.storage.from(BUCKET).upload(path, avatarFile, { upsert: true });
       if (upErr) throw new Error("Avatar upload failed: " + upErr.message);
       const { data: pub } = db.storage.from(BUCKET).getPublicUrl(path);
@@ -468,7 +450,7 @@ async function saveProfile() {
 
     if (bgFile) {
       const safeName = bgFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${currentUser.id}/bg-${crypto.randomUUID()}-${safeName}`;
+      const path = currentUser.id + "/bg-" + crypto.randomUUID() + "-" + safeName;
       const { error: upErr } = await db.storage.from(BUCKET).upload(path, bgFile, { upsert: true });
       if (upErr) throw new Error("Background upload failed: " + upErr.message);
       const { data: pub } = db.storage.from(BUCKET).getPublicUrl(path);
@@ -477,7 +459,7 @@ async function saveProfile() {
 
     if (iconFile) {
       const safeName = iconFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${currentUser.id}/icon-${crypto.randomUUID()}-${safeName}`;
+      const path = currentUser.id + "/icon-" + crypto.randomUUID() + "-" + safeName;
       const { error: upErr } = await db.storage.from(BUCKET).upload(path, iconFile, { upsert: true });
       if (upErr) throw new Error("Icon upload failed: " + upErr.message);
       const { data: pub } = db.storage.from(BUCKET).getPublicUrl(path);
@@ -488,11 +470,11 @@ async function saveProfile() {
 
     const { error } = await db.from("profiles").upsert({
       id: currentUser.id,
-      display_name,
-      avatar_url,
-      bg_url,
-      icon_url,
-      bg_color,
+      display_name: display_name,
+      avatar_url: avatar_url,
+      bg_url: bg_url,
+      icon_url: icon_url,
+      bg_color: bg_color,
       updated_at: new Date().toISOString()
     });
 
@@ -517,11 +499,11 @@ $("deleteIconBtn").addEventListener("click", async () => {
 
   const { error } = await db.from("profiles").upsert({
     id: currentUser.id,
-    display_name: currentProfile?.display_name || "CloudGallery user",
-    avatar_url: currentProfile?.avatar_url,
-    bg_url: currentProfile?.bg_url,
+    display_name: (currentProfile && currentProfile.display_name) || "CloudGallery user",
+    avatar_url: currentProfile && currentProfile.avatar_url,
+    bg_url: currentProfile && currentProfile.bg_url,
     icon_url: null,
-    bg_color: currentProfile?.bg_color || "#f5f7fb",
+    bg_color: (currentProfile && currentProfile.bg_color) || "#f5f7fb",
     updated_at: new Date().toISOString()
   });
 
@@ -539,10 +521,10 @@ $("clearBgBtn").addEventListener("click", async () => {
   
   const { error } = await db.from("profiles").upsert({
     id: currentUser.id,
-    display_name: currentProfile?.display_name || "CloudGallery user",
-    avatar_url: currentProfile?.avatar_url,
+    display_name: (currentProfile && currentProfile.display_name) || "CloudGallery user",
+    avatar_url: currentProfile && currentProfile.avatar_url,
     bg_url: null,
-    icon_url: currentProfile?.icon_url,
+    icon_url: currentProfile && currentProfile.icon_url,
     bg_color: "#f5f7fb",
     updated_at: new Date().toISOString()
   });
@@ -554,7 +536,6 @@ $("clearBgBtn").addEventListener("click", async () => {
   }
 });
 
-/* APP DRAWER MODAL TOGGLE */
 function openAppDrawer() {
   if (!currentUser) {
     showLogin();
@@ -571,11 +552,10 @@ function closeAppDrawer() {
 
 $("openAppDrawerBtn").addEventListener("click", openAppDrawer);
 $("closeAppDrawerBtn").addEventListener("click", closeAppDrawer);
-$("appDrawerModal").addEventListener("click", event => {
+$("appDrawerModal").addEventListener("click", function(event) {
   if (event.target === $("appDrawerModal")) closeAppDrawer();
 });
 
-/* FRIENDS SYSTEM FUNCTIONS */
 async function loadFriendsView() {
   if (!currentUser) return;
 
@@ -590,7 +570,7 @@ async function loadFriendsView() {
   const { data: friendships, error: friendErr } = await db
     .from("friends")
     .select("*")
-    .or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`);
+    .or("user_id.eq." + currentUser.id + ",friend_id.eq." + currentUser.id);
 
   if (friendErr) {
     console.error("Fetch friendships error:", friendErr);
@@ -604,71 +584,67 @@ async function loadFriendsView() {
   if (profErr) return;
 
   const profileMap = {};
-  (allProfiles || []).forEach(p => profileMap[p.id] = p);
+  (allProfiles || []).forEach(function(p) { profileMap[p.id] = p; });
 
-  const incomingRequests = (friendships || []).filter(
-    f => f.friend_id === currentUser.id && f.status === "pending"
-  );
+  const incomingRequests = (friendships || []).filter(function(f) {
+    return f.friend_id === currentUser.id && f.status === "pending";
+  });
 
-  pendingGrid.innerHTML = incomingRequests.length ? incomingRequests.map(f => {
+  pendingGrid.innerHTML = incomingRequests.length ? incomingRequests.map(function(f) {
     const p = profileMap[f.user_id] || {};
-    return `
-      <div class="user-card">
-        <img class="avatar" src="${escapeHTML(p.avatar_url || fallbackAvatar)}" alt="Avatar">
-        <strong>${escapeHTML(p.display_name || "CloudGallery user")}</strong>
-        <div style="display:flex;gap:6px">
-          <button class="btn-sm" onclick="acceptFriendRequest('${f.id}')">Accept</button>
-          <button class="btn-sm btn-danger" onclick="removeFriendship('${f.id}')">Decline</button>
-        </div>
-      </div>
-    `;
+    return '<div class="user-card">' +
+        '<img class="avatar" src="' + escapeHTML(p.avatar_url || fallbackAvatar) + '" alt="Avatar">' +
+        '<strong>' + escapeHTML(p.display_name || "CloudGallery user") + '</strong>' +
+        '<div style="display:flex;gap:6px">' +
+          '<button class="btn-sm" onclick="acceptFriendRequest(\'' + f.id + '\')">Accept</button>' +
+          '<button class="btn-sm btn-danger" onclick="removeFriendship(\'' + f.id + '\')">Decline</button>' +
+        '</div>' +
+      '</div>';
   }).join("") : '<div class="empty">No pending friend requests.</div>';
 
-  const activeFriends = (friendships || []).filter(f => f.status === "accepted");
+  const activeFriends = (friendships || []).filter(function(f) {
+    return f.status === "accepted";
+  });
   
-  friendsGrid.innerHTML = activeFriends.length ? activeFriends.map(f => {
+  friendsGrid.innerHTML = activeFriends.length ? activeFriends.map(function(f) {
     const friendId = f.user_id === currentUser.id ? f.friend_id : f.user_id;
     const p = profileMap[friendId] || {};
-    return `
-      <div class="user-card">
-        <img class="avatar" src="${escapeHTML(p.avatar_url || fallbackAvatar)}" alt="Avatar">
-        <strong>${escapeHTML(p.display_name || "CloudGallery user")}</strong>
-        <button class="btn-sm btn-danger" onclick="removeFriendship('${f.id}')">Unfriend</button>
-      </div>
-    `;
-  }).join("") : '<div class="empty">You haven\'t added any friends yet.</div>';
+    return '<div class="user-card">' +
+        '<img class="avatar" src="' + escapeHTML(p.avatar_url || fallbackAvatar) + '" alt="Avatar">' +
+        '<strong>' + escapeHTML(p.display_name || "CloudGallery user") + '</strong>' +
+        '<button class="btn-sm btn-danger" onclick="removeFriendship(\'' + f.id + '\')">Unfriend</button>' +
+      '</div>';
+  }).join("") : '<div class="empty">You have not added any friends yet.</div>';
 
   const searchFilter = $("searchUsersInput").value.toLowerCase().trim();
-  const otherUsers = (allProfiles || []).filter(p => p.id !== currentUser.id &&
-    (!searchFilter || (p.display_name || "").toLowerCase().includes(searchFilter))
-  );
+  const otherUsers = (allProfiles || []).filter(function(p) {
+    return p.id !== currentUser.id && (!searchFilter || (p.display_name || "").toLowerCase().includes(searchFilter));
+  });
 
-  usersGrid.innerHTML = otherUsers.length ? otherUsers.map(p => {
-    const existingRel = (friendships || []).find(
-      f => (f.user_id === currentUser.id && f.friend_id === p.id) ||
-           (f.friend_id === currentUser.id && f.user_id === p.id)
-    );
+  usersGrid.innerHTML = otherUsers.length ? otherUsers.map(function(p) {
+    const existingRel = (friendships || []).find(function(f) {
+      return (f.user_id === currentUser.id && f.friend_id === p.id) ||
+             (f.friend_id === currentUser.id && f.user_id === p.id);
+    });
 
     let actionButtonHtml = "";
     if (!existingRel) {
-      actionButtonHtml = `<button class="btn-sm" onclick="sendFriendRequest('${p.id}')">➕ Add Friend</button>`;
+      actionButtonHtml = '<button class="btn-sm" onclick="sendFriendRequest(\'' + p.id + '\')">➕ Add Friend</button>';
     } else if (existingRel.status === "pending") {
       if (existingRel.user_id === currentUser.id) {
-        actionButtonHtml = `<button class="btn-sm btn-secondary" disabled>Request Sent</button>`;
+        actionButtonHtml = '<button class="btn-sm btn-secondary" disabled>Request Sent</button>';
       } else {
-        actionButtonHtml = `<button class="btn-sm" onclick="acceptFriendRequest('${existingRel.id}')">Accept</button>`;
+        actionButtonHtml = '<button class="btn-sm" onclick="acceptFriendRequest(\'' + existingRel.id + '\')">Accept</button>';
       }
     } else {
-      actionButtonHtml = `<button class="btn-sm btn-secondary" disabled>✓ Friends</button>`;
+      actionButtonHtml = '<button class="btn-sm btn-secondary" disabled>✓ Friends</button>';
     }
 
-    return `
-      <div class="user-card">
-        <img class="avatar" src="${escapeHTML(p.avatar_url || fallbackAvatar)}" alt="Avatar">
-        <strong>${escapeHTML(p.display_name || "CloudGallery user")}</strong>
-        ${actionButtonHtml}
-      </div>
-    `;
+    return '<div class="user-card">' +
+        '<img class="avatar" src="' + escapeHTML(p.avatar_url || fallbackAvatar) + '" alt="Avatar">' +
+        '<strong>' + escapeHTML(p.display_name || "CloudGallery user") + '</strong>' +
+        actionButtonHtml +
+      '</div>';
   }).join("") : '<div class="empty">No other users found.</div>';
 }
 
@@ -703,7 +679,8 @@ async function removeFriendship(friendshipId) {
 
 $("searchUsersInput").addEventListener("input", loadFriendsView);
 
-async function loadPosts(targetId, ownOnly = false) {
+async function loadPosts(targetId, ownOnly) {
+  if (typeof ownOnly === "undefined") ownOnly = false;
   const target = $(targetId);
   target.innerHTML = '<div class="empty">Loading media feed...</div>';
 
@@ -724,29 +701,29 @@ async function loadPosts(targetId, ownOnly = false) {
 
   if (error) {
     console.error("Fetch posts error:", error);
-    target.innerHTML = `<div class="empty">Could not load feed: ${escapeHTML(error.message)}</div>`;
+    target.innerHTML = '<div class="empty">Could not load feed: ' + escapeHTML(error.message) + '</div>';
     return;
   }
 
-  if (!posts?.length) {
+  if (!posts || !posts.length) {
     target.innerHTML = ownOnly
       ? '<div class="empty">You have not uploaded any media yet.</div>'
       : '<div class="empty">No public media found. Be the first to upload!</div>';
     return;
   }
 
-  const userIds = [...new Set(posts.map(post => post.user_id))];
+  const userIds = [...new Set(posts.map(function(post) { return post.user_id; }))];
 
   const { data: profiles } = await db.from("profiles")
     .select("id,display_name,avatar_url")
     .in("id", userIds);
 
   const profileMap = {};
-  (profiles || []).forEach(p => profileMap[p.id] = p);
+  (profiles || []).forEach(function(p) { profileMap[p.id] = p; });
 
-  const postIds = posts.map(p => p.id);
+  const postIds = posts.map(function(p) { return p.id; });
 
-  const [{ data: likes }, { data: comments }] = await Promise.all([
+  const results = await Promise.all([
     db.from("likes").select("post_id,user_id").in("post_id", postIds),
     db.from("comments")
       .select("id,post_id,user_id,content,created_at")
@@ -754,7 +731,10 @@ async function loadPosts(targetId, ownOnly = false) {
       .order("created_at", { ascending: true })
   ]);
 
-  const commentUserIds = [...new Set((comments || []).map(c => c.user_id))];
+  const likes = results[0].data;
+  const comments = results[1].data;
+
+  const commentUserIds = [...new Set((comments || []).map(function(c) { return c.user_id; }))];
   let commentProfiles = [];
 
   if (commentUserIds.length) {
@@ -765,96 +745,77 @@ async function loadPosts(targetId, ownOnly = false) {
   }
 
   const commentProfileMap = {};
-  commentProfiles.forEach(p => commentProfileMap[p.id] = p);
+  commentProfiles.forEach(function(p) { commentProfileMap[p.id] = p; });
 
-  target.innerHTML = posts.map(post => {
+  target.innerHTML = posts.map(function(post) {
     const profile = profileMap[post.user_id] || {};
-    const postLikes = (likes || []).filter(l => l.post_id === post.id);
-    const liked = currentUser && postLikes.some(l => l.user_id === currentUser.id);
-    const postComments = (comments || []).filter(c => c.post_id === post.id);
+    const postLikes = (likes || []).filter(function(l) { return l.post_id === post.id; });
+    const liked = currentUser && postLikes.some(function(l) { return l.user_id === currentUser.id; });
+    const postComments = (comments || []).filter(function(c) { return c.post_id === post.id; });
     const isOwner = currentUser && String(post.user_id) === String(currentUser.id);
     const isVid = post.media_type === "video" || isVideoUrl(post.image_url);
 
-    const privacyIconMap = {
-      public: "🌐 Public",
-      friends: "👥 Friends",
-      private: "🔒 Private"
-    };
-    const privacyBadgeText = privacyIconMap[post.privacy || "public"] || "🌐 Public";
+    const privacyBadgeText = post.privacy === "friends" ? "👥 Friends" : (post.privacy === "private" ? "🔒 Private" : "🌐 Public");
 
-    const mediaHtml = isVid ? `
-      <div class="media-container">
-        <video class="video-player" id="video-${post.id}" controls preload="metadata">
-          <source src="${escapeHTML(post.image_url)}" type="video/mp4">
-          Your browser does not support video playback.
-        </video>
-        <div class="quality-bar">
-          <label>⚙️</label>
-          <select class="quality-select" data-video-id="${post.id}">
-            <option value="1080p" selected>1080p HD</option>
-            <option value="720p">720p</option>
-            <option value="480p">480p</option>
-            <option value="360p">360p</option>
-          </select>
-        </div>
-      </div>
-    ` : `
-      <div class="media-container">
-        <img class="photo-image" src="${escapeHTML(post.image_url)}" alt="Gallery image" loading="lazy">
-      </div>
-    `;
+    const mediaHtml = isVid ? 
+      '<div class="media-container">' +
+        '<video class="video-player" id="video-' + post.id + '" controls preload="metadata">' +
+          '<source src="' + escapeHTML(post.image_url) + '" type="video/mp4">' +
+          'Your browser does not support video playback.' +
+        '</video>' +
+        '<div class="quality-bar">' +
+          '<label>⚙️</label>' +
+          '<select class="quality-select" data-video-id="' + post.id + '">' +
+            '<option value="1080p" selected>1080p HD</option>' +
+            '<option value="720p">720p</option>' +
+            '<option value="480p">480p</option>' +
+            '<option value="360p">360p</option>' +
+          '</select>' +
+        '</div>' +
+      '</div>' : 
+      '<div class="media-container">' +
+        '<img class="photo-image" src="' + escapeHTML(post.image_url) + '" alt="Gallery image" loading="lazy">' +
+      '</div>';
 
-    return `
-      <article class="photo" data-post-id="${post.id}">
-        ${mediaHtml}
+    const commentsListHtml = postComments.map(function(c) {
+      const cAuthor = (commentProfileMap[c.user_id] && commentProfileMap[c.user_id].display_name) || "User";
+      return '<div class="comment"><strong>' + escapeHTML(cAuthor) + ':</strong> ' + escapeHTML(c.content) + '</div>';
+    }).join("") || '<span class="muted">No comments yet.</span>';
 
-        <div class="photo-body">
-          <div class="photo-user">
-            <div class="photo-user-left">
-              <img class="avatar" src="${escapeHTML(profile.avatar_url || fallbackAvatar)}" alt="Avatar">
-              <strong>${escapeHTML(profile.display_name || "CloudGallery user")}</strong>
-            </div>
-            <span class="privacy-badge">${privacyBadgeText}</span>
-          </div>
+    const ownerButtonsHtml = isOwner ? 
+      '<button class="edit-btn" data-edit-id="' + post.id + '" data-caption="' + escapeHTML(post.caption || "") + '" data-privacy="' + escapeHTML(post.privacy || "public") + '">✏️ Edit</button>' +
+      '<button class="delete-btn" data-delete-id="' + post.id + '" data-storage-path="' + escapeHTML(post.storage_path || "") + '">🗑 Delete</button>' : '';
 
-          ${post.caption ? `<p class="caption">${escapeHTML(post.caption)}</p>` : ""}
-          <p class="muted">${new Date(post.created_at).toLocaleDateString()}</p>
-
-          <div class="actions">
-            <button class="like ${liked ? "liked" : ""}" data-like="${post.id}">
-              ♥ ${postLikes.length}
-            </button>
-            <button class="comment-button">
-              Comments (${postComments.length})
-            </button>
-            ${isOwner ? `
-              <button class="edit-btn" data-edit-id="${post.id}" data-caption="${escapeHTML(post.caption || '')}" data-privacy="${escapeHTML(post.privacy || 'public')}">✏️ Edit</button>
-              <button class="delete-btn" data-delete-id="${post.id}" data-storage-path="${escapeHTML(post.storage_path || '')}">🗑 Delete</button>
-            ` : ""}
-          </div>
-
-          <div class="comments">
-            ${postComments.map(c => `
-              <div class="comment">
-                <strong>${escapeHTML(commentProfileMap[c.user_id]?.display_name || "User")}:</strong>
-                ${escapeHTML(c.content)}
-              </div>
-            `).join("") || '<span class="muted">No comments yet.</span>'}
-
-            <form class="comment-form" data-comment-form="${post.id}">
-              <input name="content" maxlength="500"
-                placeholder="${currentUser ? "Write a comment..." : "Sign in to comment"}"
-                ${currentUser ? "" : "disabled"}>
-              <button type="submit" ${currentUser ? "" : "disabled"}>Send</button>
-            </form>
-          </div>
-        </div>
-      </article>
-    `;
+    return '<article class="photo" data-post-id="' + post.id + '">' +
+        mediaHtml +
+        '<div class="photo-body">' +
+          '<div class="photo-user">' +
+            '<div class="photo-user-left">' +
+              '<img class="avatar" src="' + escapeHTML(profile.avatar_url || fallbackAvatar) + '" alt="Avatar">' +
+              '<strong>' + escapeHTML(profile.display_name || "CloudGallery user") + '</strong>' +
+            '</div>' +
+            '<span class="privacy-badge">' + privacyBadgeText + '</span>' +
+          '</div>' +
+          (post.caption ? '<p class="caption">' + escapeHTML(post.caption) + '</p>' : '') +
+          '<p class="muted">' + new Date(post.created_at).toLocaleDateString() + '</p>' +
+          '<div class="actions">' +
+            '<button class="like ' + (liked ? "liked" : "") + '" data-like="' + post.id + '">♥ ' + postLikes.length + '</button>' +
+            '<button class="comment-button">Comments (' + postComments.length + ')</button>' +
+            ownerButtonsHtml +
+          '</div>' +
+          '<div class="comments">' +
+            commentsListHtml +
+            '<form class="comment-form" data-comment-form="' + post.id + '">' +
+              '<input name="content" maxlength="500" placeholder="' + (currentUser ? "Write a comment..." : "Sign in to comment") + '" ' + (currentUser ? "" : "disabled") + '>' +
+              '<button type="submit" ' + (currentUser ? "" : "disabled") + '>Send</button>' +
+            '</form>' +
+          '</div>' +
+        '</div>' +
+      '</article>';
   }).join("");
 
-  target.querySelectorAll("[data-edit-id]").forEach(button => {
-    button.addEventListener("click", () => {
+  target.querySelectorAll("[data-edit-id]").forEach(function(button) {
+    button.addEventListener("click", function() {
       openEditModal(
         button.dataset.editId,
         button.dataset.caption,
@@ -865,35 +826,35 @@ async function loadPosts(targetId, ownOnly = false) {
     });
   });
 
-  target.querySelectorAll(".quality-select").forEach(select => {
-    select.addEventListener("change", (e) => {
+  target.querySelectorAll(".quality-select").forEach(function(select) {
+    select.addEventListener("change", function(e) {
       const vidId = e.target.dataset.videoId;
       const quality = e.target.value;
-      const videoEl = $(`video-${vidId}`);
+      const videoEl = $("video-" + vidId);
       if (videoEl) {
         const isPlaying = !videoEl.paused;
-        console.log(`Stream resolution adjusted to ${quality} for video ID: ${vidId}`);
+        console.log("Stream resolution adjusted to " + quality + " for video ID: " + vidId);
         if (isPlaying) videoEl.play();
       }
     });
   });
 
-  target.querySelectorAll("[data-like]").forEach(button => {
-    button.addEventListener("click", () =>
-      toggleLike(Number(button.dataset.like), targetId, ownOnly)
-    );
+  target.querySelectorAll("[data-like]").forEach(function(button) {
+    button.addEventListener("click", function() {
+      toggleLike(Number(button.dataset.like), targetId, ownOnly);
+    });
   });
 
-  target.querySelectorAll("[data-delete-id]").forEach(button => {
-    button.addEventListener("click", () =>
-      deletePost(button.dataset.deleteId, button.dataset.storagePath, targetId, ownOnly)
-    );
+  target.querySelectorAll("[data-delete-id]").forEach(function(button) {
+    button.addEventListener("click", function() {
+      deletePost(button.dataset.deleteId, button.dataset.storagePath, targetId, ownOnly);
+    });
   });
 
-  target.querySelectorAll("[data-comment-form]").forEach(form => {
-    form.addEventListener("submit", event =>
-      addComment(event, Number(form.dataset.commentForm), targetId, ownOnly)
-    );
+  target.querySelectorAll("[data-comment-form]").forEach(function(form) {
+    form.addEventListener("submit", function(event) {
+      addComment(event, Number(form.dataset.commentForm), targetId, ownOnly);
+    });
   });
 }
 
@@ -908,7 +869,7 @@ function openEditModal(postId, caption, privacy, targetId, ownOnly) {
   const newSaveBtn = saveBtn.cloneNode(true);
   saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
 
-  $("saveEditBtn").addEventListener("click", async () => {
+  $("saveEditBtn").addEventListener("click", async function() {
     const newCaption = $("editCaptionInput").value.trim();
     const newPrivacy = $("editPrivacyInput").value;
 
@@ -930,7 +891,7 @@ function openEditModal(postId, caption, privacy, targetId, ownOnly) {
       $("editStatus").textContent = "Error: " + error.message;
     } else {
       $("editStatus").textContent = "Updated successfully!";
-      setTimeout(() => {
+      setTimeout(function() {
         $("editModal").classList.add("hidden");
         loadPosts(targetId, ownOnly);
       }, 500);
@@ -938,7 +899,7 @@ function openEditModal(postId, caption, privacy, targetId, ownOnly) {
   });
 }
 
-$("cancelEditBtn").addEventListener("click", () => {
+$("cancelEditBtn").addEventListener("click", function() {
   $("editModal").classList.add("hidden");
 });
 
@@ -970,7 +931,6 @@ async function deletePost(postId, storagePath, targetId, ownOnly) {
     }
 
     loadPosts(targetId, ownOnly);
-
   } catch (err) {
     alert("Error deleting media: " + err.message);
   }
@@ -1010,7 +970,7 @@ async function addComment(event, postId, targetId, ownOnly) {
   const { error } = await db.from("comments").insert({
     post_id: postId,
     user_id: currentUser.id,
-    content
+    content: content
   });
 
   if (error) alert("Could not post comment: " + error.message);
@@ -1039,7 +999,7 @@ async function uploadImage() {
 
   const maxMB = isVid ? 100 : 10;
   if (file.size > maxMB * 1024 * 1024) {
-    $("uploadStatus").textContent = `File must be smaller than ${maxMB} MB.`;
+    $("uploadStatus").textContent = "File must be smaller than " + maxMB + " MB.";
     return;
   }
 
@@ -1047,7 +1007,7 @@ async function uploadImage() {
   $("uploadStatus").textContent = isVid ? "Uploading HD video (up to 100MB)..." : "Uploading image...";
 
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const path = `${currentUser.id}/${crypto.randomUUID()}-${safeName}`;
+  const path = currentUser.id + "/" + crypto.randomUUID() + "-" + safeName;
 
   const { error: uploadError } = await db.storage.from(BUCKET).upload(path, file, {
     contentType: file.type,
@@ -1066,8 +1026,8 @@ async function uploadImage() {
     user_id: currentUser.id,
     image_url: publicData.publicUrl,
     storage_path: path,
-    caption,
-    privacy,
+    caption: caption,
+    privacy: privacy,
     is_public: privacy === "public",
     media_type: isVid ? "video" : "image"
   });
@@ -1098,9 +1058,9 @@ function closeExplore() {
 function setView(view) {
   activeView = view;
 
-  document.querySelectorAll(".tab").forEach(tab =>
-    tab.classList.toggle("active", tab.dataset.view === view)
-  );
+  document.querySelectorAll(".tab").forEach(function(tab) {
+    tab.classList.toggle("active", tab.dataset.view === view);
+  });
 
   $("uploadPanel").classList.toggle("hidden", view !== "gallery");
   $("friendsSection").classList.toggle("hidden", view !== "friends");
@@ -1124,7 +1084,7 @@ async function updateAuthUI() {
   $("headerAvatar").classList.toggle("hidden", !currentUser);
 
   $("userLabel").textContent = currentUser
-    ? (currentUser.user_metadata?.full_name || currentUser.email || "Signed in")
+    ? ((currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email || "Signed in")
     : "Not signed in";
 
   if (currentUser) await loadProfile();
@@ -1136,12 +1096,11 @@ async function updateAuthUI() {
   }
 }
 
-/* BUTTON ATTACHMENTS */
 $("signInButton").addEventListener("click", showLogin);
 $("googleButton").addEventListener("click", signInWithGoogle);
 $("closeLoginButton").addEventListener("click", closeLogin);
 
-$("signOutButton").addEventListener("click", async () => {
+$("signOutButton").addEventListener("click", async function() {
   const { error } = await db.auth.signOut();
   if (error) alert("Sign out error: " + error.message);
 });
@@ -1150,27 +1109,26 @@ $("uploadButton").addEventListener("click", uploadImage);
 $("openExploreButton").addEventListener("click", openExplore);
 $("closeExploreButton").addEventListener("click", closeExplore);
 
-$("exploreModal").addEventListener("click", event => {
+$("exploreModal").addEventListener("click", function(event) {
   if (event.target === $("exploreModal")) closeExplore();
 });
 
-$("confirmModal").addEventListener("click", event => {
+$("confirmModal").addEventListener("click", function(event) {
   if (event.target === $("confirmModal")) $("confirmModal").classList.add("hidden");
 });
 
-$("editModal").addEventListener("click", event => {
+$("editModal").addEventListener("click", function(event) {
   if (event.target === $("editModal")) $("editModal").classList.add("hidden");
 });
 
 $("saveProfileButton").addEventListener("click", saveProfile);
 
-document.querySelectorAll(".tab").forEach(tab => {
-  tab.addEventListener("click", () => setView(tab.dataset.view));
+document.querySelectorAll(".tab").forEach(function(tab) {
+  tab.addEventListener("click", function() { setView(tab.dataset.view); });
 });
 
-/* AUTH SESSION STATE LISTENERS */
-db.auth.onAuthStateChange((_event, session) => {
-  currentUser = session?.user || null;
+db.auth.onAuthStateChange(function(_event, session) {
+  currentUser = session ? session.user : null;
   updateAuthUI();
 
   if (currentUser) {
@@ -1180,13 +1138,11 @@ db.auth.onAuthStateChange((_event, session) => {
   }
 });
 
-/* INITIAL RUN */
 (async function init() {
   const { data: { session }, error } = await db.auth.getSession();
-
   if (error) console.error("Session fetch error:", error.message);
 
-  currentUser = session?.user || null;
+  currentUser = session ? session.user : null;
   await updateAuthUI();
 })();
 </script>
