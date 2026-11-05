@@ -118,6 +118,12 @@ main{max-width:1150px;margin:35px auto;padding:20px}
       <span>CloudGallery App</span>
     </div>
   </div>
+
+  <section id="gallerySection">
+    <div id="myGallery" class="gallery hidden">
+      <div class="empty">Loading gallery...</div>
+    </div>
+  </section>
 </main>
 
 <!-- APP DRAWER POPUP MODAL (CONTAINS ALL TABS & UPLOAD CONTROLS) -->
@@ -915,7 +921,7 @@ async function deletePost(postId, storagePath, targetId, ownOnly) {
       }
     }
 
-    loadPosts(targetId, ownOnly);
+    await loadPosts(targetId, ownOnly);
 
   } catch (err) {
     alert("Error deleting media: " + err.message);
@@ -942,7 +948,7 @@ async function toggleLike(postId, targetId, ownOnly) {
       });
 
   if (result.error) alert("Could not update like: " + result.error.message);
-  loadPosts(targetId, ownOnly);
+  await loadPosts(targetId, ownOnly);
 }
 
 async function addComment(event, postId, targetId, ownOnly) {
@@ -960,7 +966,7 @@ async function addComment(event, postId, targetId, ownOnly) {
   });
 
   if (error) alert("Could not post comment: " + error.message);
-  else loadPosts(targetId, ownOnly);
+  else await loadPosts(targetId, ownOnly);
 }
 
 async function uploadImage() {
@@ -1025,6 +1031,7 @@ async function uploadImage() {
     $("captionInput").value = "";
     $("privacyInput").value = "public";
     $("uploadStatus").textContent = isVid ? "Your 1080p video is now live!" : "Your photo is now live!";
+    loadPosts("myGallery", false);
   }
 
   $("uploadButton").disabled = false;
@@ -1061,6 +1068,8 @@ function setView(view) {
     }
     loadProfile();
     loadPosts("profileGallery", true);
+  } else {
+    loadPosts("myGallery", false);
   }
 }
 
@@ -1079,6 +1088,8 @@ async function updateAuthUI() {
     await loadFriendsView();
   } else if (activeView === "profile" && currentUser) {
     await loadPosts("profileGallery", true);
+  } else {
+    loadPosts("myGallery", false);
   }
 }
 
@@ -1101,11 +1112,11 @@ $("exploreModal").addEventListener("click", event => {
 });
 
 $("confirmModal").addEventListener("click", event => {
-  if (event.target === $("confirmModal")) $("confirmModal"].classList.add("hidden");
+  if (event.target === $("confirmModal")) $("confirmModal").classList.add("hidden");
 });
 
 $("editModal").addEventListener("click", event => {
-  if (event.target === $("editModal")) $("editModal"].classList.add("hidden");
+  if (event.target === $("editModal")) $("editModal").classList.add("hidden");
 });
 
 $("saveProfileButton").addEventListener("click", saveProfile);
