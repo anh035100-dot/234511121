@@ -85,9 +85,10 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .btn-danger{background:#fee2e2;color:#dc2626}
 .btn-danger:hover{background:#fca5a5}
 
-/* FLOATING APP DRAWER ICON */
-.app-launcher-icon{position:fixed;bottom:25px;right:25px;background:#536dfe;color:white;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 15px rgba(0,0,0,0.3);cursor:pointer;z-index:15;transition:transform 0.2s, background 0.2s}
-.app-launcher-icon:hover{transform:scale(1.08);background:#4055d6}
+/* DESCRIPTIVE FLOATING APP ICON */
+.app-launcher-icon{position:fixed;bottom:25px;right:25px;background:linear-gradient(135deg, #536dfe, #4055d6);color:white;padding:10px 16px;border-radius:16px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(83,109,254,0.4);cursor:pointer;z-index:15;transition:transform 0.2s, box-shadow 0.2s;font-weight:600;font-size:14px}
+.app-launcher-icon:hover{transform:translateY(-3px);box-shadow:0 8px 25px rgba(83,109,254,0.6)}
+.app-launcher-icon .app-icon-badge{background:white;color:#536dfe;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
 
 /* APP DRAWER MODAL WINDOW */
 .app-drawer-window{width:min(700px,100%);max-height:85vh;overflow-y:auto;background:white;border-radius:18px;padding:25px;box-shadow:0 10px 25px rgba(0,0,0,0.2)}
@@ -106,14 +107,13 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 </header>
 
 <main>
-  <!-- FLOATING APP LAUNCHER ICON -->
-  <div id="openAppDrawerBtn" class="app-launcher-icon" title="Open App Menu">📁</div>
+  <!-- GUIDED FLOATING APP LAUNCHER -->
+  <div id="openAppDrawerBtn" class="app-launcher-icon" title="Open CloudGallery App Menu">
+    <div class="app-icon-badge">☁️</div>
+    <span>CloudGallery App</span>
+  </div>
 
   <section id="gallerySection">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
-      <button id="toggleGalleryBtn" style="background:rgba(255,255,255,0.9);color:#182230;font-weight:600;border:1px solid #e7eaf1">🖼️ Show Gallery Feed</button>
-      <button id="openExploreButton">🌍 Explore World Media</button>
-    </div>
     <div id="myGallery" class="gallery hidden">
       <div class="empty">Loading gallery...</div>
     </div>
@@ -298,7 +298,6 @@ let currentUser = null;
 let currentProfile = null;
 let activeView = "gallery";
 let editingPostId = null;
-let isGalleryVisible = false;
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -473,8 +472,6 @@ async function saveProfile() {
     $("bgFileInput").value = "";
 
     await loadProfile();
-    await loadPosts("myGallery", false);
-
   } catch (err) {
     $("profileStatus").textContent = "Error: " + err.message;
   } finally {
@@ -500,16 +497,6 @@ $("clearBgBtn").addEventListener("click", async () => {
     applyUserBackground(null, "#f5f7fb");
     $("profileStatus").textContent = "Background reset to default!";
     await loadProfile();
-  }
-});
-
-/* TOGGLE GALLERY FEED VISIBILITY */
-$("toggleGalleryBtn").addEventListener("click", () => {
-  isGalleryVisible = !isGalleryVisible;
-  $("myGallery").classList.toggle("hidden", !isGalleryVisible);
-  $("toggleGalleryBtn").textContent = isGalleryVisible ? "🖼️ Hide Gallery Feed" : "🖼️ Show Gallery Feed";
-  if (isGalleryVisible) {
-    loadPosts("myGallery", false);
   }
 });
 
@@ -928,7 +915,7 @@ async function deletePost(postId, storagePath, targetId, ownOnly) {
       }
     }
 
-    if (isGalleryVisible) await loadPosts(targetId, ownOnly);
+    await loadPosts(targetId, ownOnly);
 
   } catch (err) {
     alert("Error deleting media: " + err.message);
@@ -955,7 +942,7 @@ async function toggleLike(postId, targetId, ownOnly) {
       });
 
   if (result.error) alert("Could not update like: " + result.error.message);
-  if (isGalleryVisible) await loadPosts(targetId, ownOnly);
+  await loadPosts(targetId, ownOnly);
 }
 
 async function addComment(event, postId, targetId, ownOnly) {
@@ -973,7 +960,7 @@ async function addComment(event, postId, targetId, ownOnly) {
   });
 
   if (error) alert("Could not post comment: " + error.message);
-  else if (isGalleryVisible) await loadPosts(targetId, ownOnly);
+  else await loadPosts(targetId, ownOnly);
 }
 
 async function uploadImage() {
@@ -1038,21 +1025,10 @@ async function uploadImage() {
     $("captionInput").value = "";
     $("privacyInput").value = "public";
     $("uploadStatus").textContent = isVid ? "Your 1080p video is now live!" : "Your photo is now live!";
-    if (isGalleryVisible) await loadPosts("myGallery", false);
+    await loadPosts("myGallery", false);
   }
 
   $("uploadButton").disabled = false;
-}
-
-function openExplore() {
-  $("exploreModal").classList.remove("hidden");
-  document.body.style.overflow = "hidden";
-  loadPosts("exploreGallery", false);
-}
-
-function closeExplore() {
-  $("exploreModal").classList.add("hidden");
-  document.body.style.overflow = "";
 }
 
 function setView(view) {
@@ -1076,7 +1052,7 @@ function setView(view) {
     loadProfile();
     loadPosts("profileGallery", true);
   } else {
-    if (isGalleryVisible) loadPosts("myGallery", false);
+    loadPosts("myGallery", false);
   }
 }
 
@@ -1095,8 +1071,8 @@ async function updateAuthUI() {
     await loadFriendsView();
   } else if (activeView === "profile" && currentUser) {
     await loadPosts("profileGallery", true);
-  } else if (isGalleryVisible) {
-    await loadPosts("myGallery", false);
+  } else {
+    loadPosts("myGallery", false);
   }
 }
 
@@ -1112,19 +1088,12 @@ $("signOutButton").addEventListener("click", async () => {
 
 $("uploadButton").addEventListener("click", uploadImage);
 
-$("openExploreButton").addEventListener("click", openExplore);
-$("closeExploreButton").addEventListener("click", closeExplore);
-
-$("exploreModal").addEventListener("click", event => {
-  if (event.target === $("exploreModal")) closeExplore();
-});
-
 $("confirmModal").addEventListener("click", event => {
   if (event.target === $("confirmModal")) $("confirmModal").classList.add("hidden");
 });
 
 $("editModal").addEventListener("click", event => {
-  if (event.target === $("editModal")) $("editModal"].classList.add("hidden");
+  if (event.target === $("editModal")) $("editModal").classList.add("hidden");
 });
 
 $("saveProfileButton").addEventListener("click", saveProfile);
