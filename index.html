@@ -9,7 +9,7 @@
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;background:#f5f7fb;color:#182230;background-size:cover;background-position:center;background-attachment:fixed;transition:background 0.3s}
+body{font-family:Arial,sans-serif;background:#f5f7fb;color:#182230;background-size:cover;background-position:center;background-attachment:fixed;transition:background 0.3s;min-height:100vh}
 button{border:0;border-radius:10px;padding:11px 17px;background:#536dfe;color:white;cursor:pointer;font-weight:600;transition:background 0.2s}
 button:hover{background:#4055d6}
 button:disabled{opacity:.5;cursor:not-allowed}
@@ -22,16 +22,14 @@ header h1{color:#536dfe;font-size:25px}
 .header-right{display:flex;align-items:center;gap:12px}
 .avatar{width:35px;height:35px;border-radius:50%;object-fit:cover;background:#e9ecff}
 main{max-width:1150px;margin:35px auto;padding:20px}
-.hero{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:20px;background:rgba(255,255,255,0.9);padding:20px;border-radius:15px;border:1px solid #e7eaf1}
-.hero h2{font-size:26px;margin-bottom:8px}
+.hero{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:20px}
+.hero h2{font-size:26px;margin-bottom:8px;color:#182230}
 .muted{color:#718096;font-size:14px}
-.section{background:rgba(255,255,255,0.95);border:1px solid #e7eaf1;border-radius:15px;padding:22px;margin-bottom:25px;box-shadow:0 4px 6px rgba(0,0,0,0.02)}
+.section{background:white;border:1px solid #e7eaf1;border-radius:15px;padding:22px;margin-bottom:25px;box-shadow:0 4px 6px rgba(0,0,0,0.02)}
 .section h2{margin-bottom:12px}
 .tabs{display:flex;gap:10px;margin:15px 0;flex-wrap:wrap;align-items:center}
-.tab{background:rgba(255,255,255,0.8);color:#68738a}
+.tab{background:#f1f5f9;color:#68738a}
 .tab.active{background:#e9ecff;color:#4055d6}
-.app-drawer-btn{background:#10b981;color:white;display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;font-weight:600;cursor:pointer;border:0;transition:background 0.2s}
-.app-drawer-btn:hover{background:#059669}
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
 .photo{background:white;border:1px solid #e7eaf1;border-radius:14px;overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,0.02);position:relative}
 .media-container{position:relative;width:100%;height:240px;background:#000}
@@ -86,13 +84,13 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .btn-secondary:hover{background:#e0e4ff}
 .btn-danger{background:#fee2e2;color:#dc2626}
 .btn-danger:hover{background:#fca5a5}
-footer{text-align:center;padding:30px;color:#94a3b8;background:rgba(255,255,255,0.8);margin-top:40px}
-@media(max-width:650px){
-header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
-.hero h2{font-size:22px}main{margin:15px auto;padding:12px}
-.gallery{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}
-.media-container{height:175px}.section{padding:15px}
-}
+
+/* FLOATING APP DRAWER ICON */
+.app-launcher-icon{position:fixed;bottom:25px;right:25px;background:#536dfe;color:white;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 15px rgba(0,0,0,0.3);cursor:pointer;z-index:15;transition:transform 0.2s, background 0.2s}
+.app-launcher-icon:hover{transform:scale(1.08);background:#4055d6}
+
+/* APP DRAWER MODAL WINDOW */
+.app-drawer-window{width:min(700px,100%);max-height:85vh;overflow-y:auto;background:white;border-radius:18px;padding:25px;box-shadow:0 10px 25px rgba(0,0,0,0.2)}
 </style>
 </head>
 
@@ -108,17 +106,43 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 </header>
 
 <main>
-  <!-- COLLAPSED MENU CONTENT (HERO + UPLOAD + FOOTER) -->
-  <div id="drawerContainer" class="hidden" style="margin-bottom:25px">
-    <section class="hero" style="margin-bottom:15px">
+  <!-- FLOATING APP LAUNCHER ICON -->
+  <div id="openAppDrawerBtn" class="app-launcher-icon" title="Open App Menu">📁</div>
+
+  <section id="gallerySection">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
+      <h2 style="background:rgba(255,255,255,0.9);padding:8px 16px;border-radius:10px">🖼️ My Online Gallery</h2>
+      <button id="openExploreButton">🌍 Explore World Media</button>
+    </div>
+    <div id="myGallery" class="gallery">
+      <div class="empty">Loading gallery...</div>
+    </div>
+  </section>
+</main>
+
+<!-- APP DRAWER POPUP MODAL (CONTAINS ALL TABS & UPLOAD CONTROLS) -->
+<div id="appDrawerModal" class="modal-backdrop hidden">
+  <div class="app-drawer-window">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+      <h2>📱 CloudGallery Control Center</h2>
+      <button id="closeAppDrawerBtn" class="btn-secondary" style="padding:6px 12px">✕ Close</button>
+    </div>
+
+    <section class="hero" style="background:#f8fafc;padding:15px;border-radius:12px;border:1px solid #e7eaf1">
       <div>
         <h2>Your photos & 1080p videos, everywhere.</h2>
         <p class="muted">Upload, store and stream your favorite content in high definition.</p>
       </div>
-      <button id="closeHeroBtn" class="btn-secondary" style="padding:6px 12px;font-size:12px">✕ Hide</button>
     </section>
 
-    <section id="uploadPanel" class="section" style="margin-bottom:0">
+    <nav class="tabs">
+      <button class="tab active" data-view="gallery">My Online Gallery</button>
+      <button class="tab" data-view="friends">👥 Friends</button>
+      <button class="tab" data-view="profile">My Profile</button>
+    </nav>
+
+    <!-- UPLOAD PANEL (INSIDE DRAWER) -->
+    <section id="uploadPanel" class="section" style="border:1px solid #e7eaf1">
       <h2>Upload media (Photos or HD Videos)</h2>
       <p class="muted">Share files with the CloudGallery community (Videos up to 100MB).</p>
       <input type="file" id="fileInput" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime" style="margin-top:15px">
@@ -134,83 +158,64 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
       <button id="uploadButton" style="margin-top:15px">Upload media</button>
       <p id="uploadStatus" class="status"></p>
     </section>
+
+    <!-- FRIENDS SECTION (INSIDE DRAWER) -->
+    <section id="friendsSection" class="section hidden">
+      <h2>👥 Community & Friends</h2>
+      <p class="muted">Connect with members to view their "Friends Only" photos and videos.</p>
+      
+      <div style="margin-top:20px">
+        <h3>Pending Friend Requests</h3>
+        <div id="pendingRequestsGrid" class="user-card-grid"></div>
+      </div>
+
+      <div style="margin-top:30px">
+        <h3>Your Friends</h3>
+        <div id="friendsListGrid" class="user-card-grid"></div>
+      </div>
+
+      <div style="margin-top:30px">
+        <h3>Discover Community Members</h3>
+        <input id="searchUsersInput" placeholder="Search users by name..." style="margin-top:10px;margin-bottom:15px">
+        <div id="allUsersGrid" class="user-card-grid"></div>
+      </div>
+    </section>
+
+    <!-- PROFILE CUSTOMIZATION SECTION (INSIDE DRAWER) -->
+    <section id="profileSection" class="section hidden">
+      <div class="profile-header">
+        <img id="profileAvatar" class="avatar" alt="Profile">
+        <div>
+          <h2 id="profileHeading">My Profile</h2>
+          <p id="profileEmail" class="muted"></p>
+        </div>
+      </div>
+
+      <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Display name</label>
+      <input id="displayName" maxlength="40" placeholder="Your display name" style="margin-top:5px">
+
+      <label class="muted" style="display:block;margin-top:15px;font-size:13px;font-weight:600">Upload New Avatar Image</label>
+      <input type="file" id="avatarFileInput" accept="image/*" style="margin-top:5px">
+
+      <label class="muted" style="display:block;margin-top:15px;font-size:13px;font-weight:600">Upload New Background Image</label>
+      <input type="file" id="bgFileInput" accept="image/*" style="margin-top:5px">
+
+      <div style="display:flex;align-items:center;gap:12px;margin-top:15px">
+        <div>
+          <label class="muted" style="display:block;font-size:13px;font-weight:600">Or Solid Background Color</label>
+          <input type="color" id="bgColorInput" value="#f5f7fb" style="width:60px;height:40px;padding:2px;cursor:pointer;margin-top:5px">
+        </div>
+        <button id="clearBgBtn" class="btn-secondary" style="margin-top:18px;padding:9px 14px;font-size:12px">Reset Background</button>
+      </div>
+
+      <button id="saveProfileButton" style="margin-top:20px">Save Profile & Theme</button>
+      <p id="profileStatus" class="status"></p>
+
+      <h3 style="margin-top:30px">My Uploads</h3>
+      <div id="profileGallery" class="gallery" style="margin-top:15px"></div>
+    </section>
   </div>
-
-  <nav class="tabs">
-    <button class="tab active" data-view="gallery">My Online Gallery</button>
-    <button class="tab" data-view="friends">👥 Friends</button>
-    <button class="tab" data-view="profile">My Profile</button>
-    <button id="toggleAppDrawerBtn" class="app-drawer-btn hidden">📱 <span>Open App Menu</span></button>
-  </nav>
-
-  <section id="gallerySection">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
-      <h2 style="background:rgba(255,255,255,0.9);padding:8px 16px;border-radius:10px">🖼️ My Online Gallery</h2>
-      <button id="openExploreButton">🌍 Explore World Media</button>
-    </div>
-    <div id="myGallery" class="gallery">
-      <div class="empty">Loading gallery...</div>
-    </div>
-  </section>
-
-  <!-- FRIENDS SECTION -->
-  <section id="friendsSection" class="section hidden">
-    <h2>👥 Community & Friends</h2>
-    <p class="muted">Connect with members to view their "Friends Only" photos and videos.</p>
-    
-    <div style="margin-top:20px">
-      <h3>Pending Friend Requests</h3>
-      <div id="pendingRequestsGrid" class="user-card-grid"></div>
-    </div>
-
-    <div style="margin-top:30px">
-      <h3>Your Friends</h3>
-      <div id="friendsListGrid" class="user-card-grid"></div>
-    </div>
-
-    <div style="margin-top:30px">
-      <h3>Discover Community Members</h3>
-      <input id="searchUsersInput" placeholder="Search users by name..." style="margin-top:10px;margin-bottom:15px">
-      <div id="allUsersGrid" class="user-card-grid"></div>
-    </div>
-  </section>
-
-  <!-- PROFILE CUSTOMIZATION SECTION -->
-  <section id="profileSection" class="section hidden">
-    <div class="profile-header">
-      <img id="profileAvatar" class="avatar" alt="Profile">
-      <div>
-        <h2 id="profileHeading">My Profile</h2>
-        <p id="profileEmail" class="muted"></p>
-      </div>
-    </div>
-
-    <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Display name</label>
-    <input id="displayName" maxlength="40" placeholder="Your display name" style="margin-top:5px">
-
-    <label class="muted" style="display:block;margin-top:15px;font-size:13px;font-weight:600">Upload New Avatar Image</label>
-    <input type="file" id="avatarFileInput" accept="image/*" style="margin-top:5px">
-
-    <label class="muted" style="display:block;margin-top:15px;font-size:13px;font-weight:600">Upload New Background Image</label>
-    <input type="file" id="bgFileInput" accept="image/*" style="margin-top:5px">
-
-    <div style="display:flex;align-items:center;gap:12px;margin-top:15px">
-      <div>
-        <label class="muted" style="display:block;font-size:13px;font-weight:600">Or Solid Background Color</label>
-        <input type="color" id="bgColorInput" value="#f5f7fb" style="width:60px;height:40px;padding:2px;cursor:pointer;margin-top:5px">
-      </div>
-      <button id="clearBgBtn" class="btn-secondary" style="margin-top:18px;padding:9px 14px;font-size:12px">Reset Background</button>
-    </div>
-
-    <button id="saveProfileButton" style="margin-top:20px">Save Profile & Theme</button>
-    <p id="profileStatus" class="status"></p>
-
-    <h3 style="margin-top:30px">My Uploads</h3>
-    <div id="profileGallery" class="gallery" style="margin-top:15px"></div>
-  </section>
-</main>
-
-<footer id="appFooter" class="hidden">© 2026 CloudGallery · Your memories in the cloud.</footer>
+</div>
 
 <!-- GOOGLE SIGN-IN MODAL -->
 <div id="loginModal" class="modal-backdrop hidden">
@@ -293,7 +298,6 @@ let currentUser = null;
 let currentProfile = null;
 let activeView = "gallery";
 let editingPostId = null;
-let isDrawerOpen = false;
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -498,28 +502,30 @@ $("clearBgBtn").addEventListener("click", async () => {
   }
 });
 
-/* APP DRAWER TOGGLE LOGIC */
-function toggleAppDrawer() {
-  isDrawerOpen = !isDrawerOpen;
-  $("drawerContainer").classList.toggle("hidden", !isDrawerOpen);
-  $("appFooter").classList.toggle("hidden", !isDrawerOpen);
-  $("toggleAppDrawerBtn").querySelector("span").textContent = isDrawerOpen ? "Close Menu" : "Open App Menu";
-}
-
-$("toggleAppDrawerBtn").addEventListener("click", toggleAppDrawer);
-$("closeHeroBtn").addEventListener("click", () => {
-  isDrawerOpen = false;
-  $("drawerContainer").classList.add("hidden");
-  $("appFooter").classList.add("hidden");
-  $("toggleAppDrawerBtn").querySelector("span").textContent = "Open App Menu";
-});
-
-/* FRIENDS SYSTEM FUNCTIONS */
-async function loadFriendsView() {
+/* APP DRAWER MODAL TOGGLE */
+function openAppDrawer() {
   if (!currentUser) {
     showLogin();
     return;
   }
+  $("appDrawerModal").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+function closeAppDrawer() {
+  $("appDrawerModal").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+$("openAppDrawerBtn").addEventListener("click", openAppDrawer);
+$("closeAppDrawerBtn").addEventListener("click", closeAppDrawer);
+$("appDrawerModal").addEventListener("click", event => {
+  if (event.target === $("appDrawerModal")) closeAppDrawer();
+});
+
+/* FRIENDS SYSTEM FUNCTIONS */
+async function loadFriendsView() {
+  if (!currentUser) return;
 
   const pendingGrid = $("pendingRequestsGrid");
   const friendsGrid = $("friendsListGrid");
@@ -1045,15 +1051,9 @@ function setView(view) {
     tab.classList.toggle("active", tab.dataset.view === view)
   );
 
-  $("gallerySection").classList.toggle("hidden", view !== "gallery");
+  $("uploadPanel").classList.toggle("hidden", view !== "gallery");
   $("friendsSection").classList.toggle("hidden", view !== "friends");
   $("profileSection").classList.toggle("hidden", view !== "profile");
-  
-  isDrawerOpen = false;
-  $("drawerContainer").classList.add("hidden");
-  $("appFooter").classList.add("hidden");
-  $("toggleAppDrawerBtn").querySelector("span").textContent = "Open App Menu";
-  $("toggleAppDrawerBtn").classList.toggle("hidden", view !== "gallery");
 
   if (view === "friends") {
     loadFriendsView();
@@ -1078,8 +1078,6 @@ async function updateAuthUI() {
     ? (currentUser.user_metadata?.full_name || currentUser.email || "Signed in")
     : "Not signed in";
 
-  $("toggleAppDrawerBtn").classList.toggle("hidden", !currentUser || activeView !== "gallery");
-
   if (currentUser) await loadProfile();
 
   if (activeView === "friends") {
@@ -1087,7 +1085,7 @@ async function updateAuthUI() {
   } else if (activeView === "profile" && currentUser) {
     await loadPosts("profileGallery", true);
   } else {
-    await loadPosts("myGallery", false);
+    loadPosts("myGallery", false);
   }
 }
 
