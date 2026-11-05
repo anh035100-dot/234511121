@@ -34,7 +34,7 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .media-container{position:relative;width:100%;height:240px;background:#000}
 .photo-image,.video-player{width:100%;height:100%;object-fit:cover;display:block}
 .video-player{object-fit:contain}
-.quality-bar{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);padding:3px 6px;border-radius:6px;display:flex;align-items:center;gap:5px;z-index:2}
+.quality-bar{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.75);padding:4px 8px;border-radius:6px;display:flex;align-items:center;gap:6px;z-index:2}
 .quality-bar label{color:white;font-size:10px;font-weight:600}
 .quality-select{padding:2px 6px;font-size:11px;border-radius:4px;background:#222;color:white;border:1px solid #444;width:auto}
 .photo-body{padding:13px}
@@ -102,8 +102,8 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 <main>
   <section class="hero">
     <div>
-      <h2>Your photos & videos, everywhere.</h2>
-      <p class="muted">Upload, store and share your favorite memories in up to 1080p high definition.</p>
+      <h2>Your photos & 1080p videos, everywhere.</h2>
+      <p class="muted">Upload, store and stream your favorite content in high definition.</p>
     </div>
   </section>
 
@@ -113,9 +113,9 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
   </nav>
 
   <section id="uploadPanel" class="section">
-    <h2>Upload image or video</h2>
-    <p class="muted">Share photos or HD videos with the CloudGallery community.</p>
-    <input type="file" id="fileInput" accept="image/*,video/*" style="margin-top:15px">
+    <h2>Upload media (Photos or HD Videos)</h2>
+    <p class="muted">Share files with the CloudGallery community (Videos up to 100MB).</p>
+    <input type="file" id="fileInput" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime" style="margin-top:15px">
     <input id="captionInput" maxlength="300" placeholder="Write a caption (optional)" style="margin-top:12px">
     
     <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Privacy setting</label>
@@ -125,14 +125,14 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
       <option value="private">🔒 Private (Only me)</option>
     </select>
 
-    <button id="uploadButton" style="margin-top:15px">Upload file</button>
+    <button id="uploadButton" style="margin-top:15px">Upload media</button>
     <p id="uploadStatus" class="status"></p>
   </section>
 
   <section id="gallerySection">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
       <h2>🖼️ My Online Gallery</h2>
-      <button id="openExploreButton">🌍 Explore World of Media</button>
+      <button id="openExploreButton">🌍 Explore World Media</button>
     </div>
     <div id="myGallery" class="gallery">
       <div class="empty">Loading gallery...</div>
@@ -162,7 +162,7 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 <div id="loginModal" class="modal-backdrop hidden">
   <div class="modal">
     <h2>Welcome to CloudGallery!</h2>
-    <p class="muted">Sign in with Google to upload, like and comment on media.</p>
+    <p class="muted">Sign in with Google to upload, like and comment on content.</p>
     <button id="googleButton" class="google-button">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
       Continue with Google
@@ -177,7 +177,7 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
   <div class="explore-window">
     <div class="explore-header">
       <div>
-        <h2>🌍 Explore World of Media</h2>
+        <h2>🌍 Explore World Media</h2>
         <p class="muted">Discover photos and videos shared by everyone.</p>
       </div>
       <button id="closeExploreButton">✕ Close</button>
@@ -191,7 +191,7 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 <div id="confirmModal" class="modal-backdrop hidden">
   <div class="confirm-modal">
     <h3 style="margin-bottom:8px">Delete Item</h3>
-    <p class="muted" id="confirmText">Are you sure you want to delete this media?</p>
+    <p class="muted" id="confirmText">Are you sure you want to delete this media item?</p>
     <div class="confirm-actions">
       <button id="confirmCancelBtn" class="btn-secondary">Cancel</button>
       <button id="confirmOkBtn" class="btn-danger">Delete</button>
@@ -348,7 +348,7 @@ async function saveProfile() {
 
 async function loadPosts(targetId, ownOnly = false) {
   const target = $(targetId);
-  target.innerHTML = '<div class="empty">Loading media...</div>';
+  target.innerHTML = '<div class="empty">Loading media feed...</div>';
 
   let query = db.from("posts")
     .select("id,user_id,image_url,storage_path,caption,privacy,created_at,media_type")
@@ -373,14 +373,14 @@ async function loadPosts(targetId, ownOnly = false) {
 
   if (error) {
     console.error("Fetch posts error:", error);
-    target.innerHTML = `<div class="empty">Could not load media: ${escapeHTML(error.message)}</div>`;
+    target.innerHTML = `<div class="empty">Could not load feed: ${escapeHTML(error.message)}</div>`;
     return;
   }
 
   if (!posts?.length) {
     target.innerHTML = ownOnly
       ? '<div class="empty">You have not uploaded any media yet.</div>'
-      : '<div class="empty">No public posts yet. Be the first to upload!</div>';
+      : '<div class="empty">No public media found. Be the first to upload!</div>';
     return;
   }
 
@@ -438,7 +438,7 @@ async function loadPosts(targetId, ownOnly = false) {
           Your browser does not support video playback.
         </video>
         <div class="quality-bar">
-          <label>⚙️ Quality:</label>
+          <label>⚙️</label>
           <select class="quality-select" data-video-id="${post.id}">
             <option value="1080p" selected>1080p HD</option>
             <option value="720p">720p</option>
@@ -505,9 +505,8 @@ async function loadPosts(targetId, ownOnly = false) {
       const quality = e.target.value;
       const videoEl = $(`video-${vidId}`);
       if (videoEl) {
-        const currentTime = videoEl.currentTime;
         const isPlaying = !videoEl.paused;
-        console.log(`Switched video #${vidId} resolution to ${quality}`);
+        console.log(`Stream resolution adjusted to ${quality} for video ID: ${vidId}`);
         if (isPlaying) videoEl.play();
       }
     });
@@ -627,14 +626,15 @@ async function uploadImage() {
     return;
   }
 
-  const maxMB = isVid ? 50 : 10;
+  // Expanded limit: up to 100MB for videos, 10MB for photos
+  const maxMB = isVid ? 100 : 10;
   if (file.size > maxMB * 1024 * 1024) {
     $("uploadStatus").textContent = `File must be smaller than ${maxMB} MB.`;
     return;
   }
 
   $("uploadButton").disabled = true;
-  $("uploadStatus").textContent = isVid ? "Uploading HD video..." : "Uploading image...";
+  $("uploadStatus").textContent = isVid ? "Uploading HD video (up to 100MB)..." : "Uploading image...";
 
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${currentUser.id}/${crypto.randomUUID()}-${safeName}`;
@@ -732,6 +732,7 @@ async function updateAuthUI() {
 /* BUTTON ATTACHMENTS */
 $("signInButton").addEventListener("click", showLogin);
 $("googleButton").addEventListener("click", signInWithGoogle);
+$("closeLoginButton").issueClick = closeLogin;
 $("closeLoginButton").addEventListener("click", closeLogin);
 
 $("signOutButton").addEventListener("click", async () => {
