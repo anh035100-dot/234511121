@@ -43,13 +43,14 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .photo-user .avatar{width:29px;height:29px}
 .privacy-badge{font-size:11px;padding:3px 7px;border-radius:6px;background:#f1f5f9;color:#475569;font-weight:600;white-space:nowrap}
 .caption{margin:10px 0;overflow-wrap:anywhere}
-.actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
 .like{background:#fff0f3;color:#d33b65;padding:8px 12px}
 .like:hover{background:#ffe1e7}
 .like.liked{background:#ffdce6;color:#b01d46}
 .comment-button{background:#eef0ff;color:#4055d6;padding:8px 12px;cursor:default}
 .delete-btn{background:#fee2e2;color:#dc2626;padding:8px 12px}
 .delete-btn:hover{background:#fca5a5}
+.privacy-select-inline{padding:7px 10px;font-size:12px;border-radius:8px;background:#f1f5f9;border:1px solid #cbd5e1;color:#334155;width:auto;cursor:pointer}
 .comments{border-top:1px solid #eee;margin-top:12px;padding-top:10px}
 .comment{font-size:13px;margin:8px 0;overflow-wrap:anywhere}
 .comment-form{display:flex;gap:6px;margin-top:10px}
@@ -476,7 +477,14 @@ async function loadPosts(targetId, ownOnly = false) {
             <button class="comment-button">
               Comments (${postComments.length})
             </button>
-            ${isOwner ? `<button class="delete-btn" data-delete-id="${post.id}" data-storage-path="${escapeHTML(post.storage_path || '')}">🗑 Delete</button>` : ""}
+            ${isOwner ? `
+              <select class="privacy-select-inline" data-privacy-id="${post.id}" title="Change Privacy">
+                <option value="public" ${post.privacy === 'public' ? 'selected' : ''}>🌐 Public</option>
+                <option value="friends" ${post.privacy === 'friends' ? 'selected' : ''}>👥 Friends</option>
+                <option value="private" ${post.privacy === 'private' ? 'selected' : ''}>🔒 Private</option>
+              </select>
+              <button class="delete-btn" data-delete-id="${post.id}" data-storage-path="${escapeHTML(post.storage_path || '')}">🗑 Delete</button>
+            ` : ""}
           </div>
 
           <div class="comments">
@@ -498,6 +506,14 @@ async function loadPosts(targetId, ownOnly = false) {
       </article>
     `;
   }).join("");
+
+  target.querySelectorAll(".privacy-select-inline").forEach(select => {
+    select.addEventListener("change", async (e) => {
+      const postId = e.target.dataset.privacyId;
+      const newPrivacy = e.target.value;
+      await updatePostPrivacy(postId, newPrivacy, targetId, ownOnly);
+    });
+  });
 
   target.querySelectorAll(".quality-select").forEach(select => {
     select.addEventListener("change", (e) => {
@@ -529,6 +545,21 @@ async function loadPosts(targetId, ownOnly = false) {
       addComment(event, Number(form.dataset.commentForm), targetId, ownOnly)
     );
   });
+}
+
+async function updatePostPrivacy(postId, newPrivacy, targetId, ownOnly) {
+  if (!currentUser) return showLogin();
+
+  const { error } = await db.from("posts")
+    .update({ privacy: newPrivacy, is_public: newPrivacy === "public" })
+    .eq("id", postId)
+    .eq("user_id", currentUser.id);
+
+  if (error) {
+    alert("Could not update privacy: " + error.message);
+  } else {
+    await loadPosts(targetId, ownOnly);
+  }
 }
 
 async function deletePost(postId, storagePath, targetId, ownOnly) {
@@ -626,7 +657,6 @@ async function uploadImage() {
     return;
   }
 
-  // Expanded limit: up to 100MB for videos, 10MB for photos
   const maxMB = isVid ? 100 : 10;
   if (file.size > maxMB * 1024 * 1024) {
     $("uploadStatus").textContent = `File must be smaller than ${maxMB} MB.`;
@@ -732,7 +762,6 @@ async function updateAuthUI() {
 /* BUTTON ATTACHMENTS */
 $("signInButton").addEventListener("click", showLogin);
 $("googleButton").addEventListener("click", signInWithGoogle);
-$("closeLoginButton").issueClick = closeLogin;
 $("closeLoginButton").addEventListener("click", closeLogin);
 
 $("signOutButton").addEventListener("click", async () => {
