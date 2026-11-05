@@ -85,9 +85,13 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .btn-danger{background:#fee2e2;color:#dc2626}
 .btn-danger:hover{background:#fca5a5}
 
-/* FLOATING APP DRAWER ICON */
-.app-launcher-icon{position:fixed;bottom:25px;right:25px;background:#536dfe;color:white;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 15px rgba(0,0,0,0.3);cursor:pointer;z-index:15;transition:transform 0.2s, background 0.2s}
-.app-launcher-icon:hover{transform:scale(1.08);background:#4055d6}
+/* FLOATING APP LAUNCHER & QUICK EXPLORE CONTAINER */
+.bottom-floating-bar{position:fixed;bottom:25px;right:25px;display:flex;align-items:center;gap:12px;z-index:15}
+.explore-quick-btn{background:rgba(255,255,255,0.95);color:#182230;padding:12px 18px;border-radius:16px;box-shadow:0 4px 15px rgba(0,0,0,0.2);cursor:pointer;font-weight:600;font-size:14px;border:1px solid #e7eaf1;transition:transform 0.2s}
+.explore-quick-btn:hover{transform:translateY(-2px);background:white}
+.app-launcher-icon{background:linear-gradient(135deg, #536dfe, #4055d6);color:white;padding:10px 16px;border-radius:16px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(83,109,254,0.4);cursor:pointer;transition:transform 0.2s, box-shadow 0.2s;font-weight:600;font-size:14px}
+.app-launcher-icon:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(83,109,254,0.6)}
+.app-launcher-icon .app-icon-badge{background:white;color:#536dfe;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
 
 /* APP DRAWER MODAL WINDOW */
 .app-drawer-window{width:min(700px,100%);max-height:85vh;overflow-y:auto;background:white;border-radius:18px;padding:25px;box-shadow:0 10px 25px rgba(0,0,0,0.2)}
@@ -106,14 +110,14 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 </header>
 
 <main>
-  <!-- FLOATING APP LAUNCHER ICON -->
-  <div id="openAppDrawerBtn" class="app-launcher-icon" title="Open App Menu">📁</div>
-
-  <section id="gallerySection">
-    <div id="myGallery" class="gallery hidden">
-      <div class="empty">Loading gallery...</div>
+  <!-- FLOATING BOTTOM BAR (EXPLORE BUTTON + APP LAUNCHER) -->
+  <div class="bottom-floating-bar">
+    <button id="openExploreButton" class="explore-quick-btn">🌍 Explore World Media</button>
+    <div id="openAppDrawerBtn" class="app-launcher-icon" title="Open CloudGallery App Menu">
+      <div class="app-icon-badge">☁️</div>
+      <span>CloudGallery App</span>
     </div>
-  </section>
+  </div>
 </main>
 
 <!-- APP DRAWER POPUP MODAL (CONTAINS ALL TABS & UPLOAD CONTROLS) -->
@@ -911,7 +915,7 @@ async function deletePost(postId, storagePath, targetId, ownOnly) {
       }
     }
 
-    await loadPosts(targetId, ownOnly);
+    loadPosts(targetId, ownOnly);
 
   } catch (err) {
     alert("Error deleting media: " + err.message);
@@ -938,7 +942,7 @@ async function toggleLike(postId, targetId, ownOnly) {
       });
 
   if (result.error) alert("Could not update like: " + result.error.message);
-  await loadPosts(targetId, ownOnly);
+  loadPosts(targetId, ownOnly);
 }
 
 async function addComment(event, postId, targetId, ownOnly) {
@@ -956,7 +960,7 @@ async function addComment(event, postId, targetId, ownOnly) {
   });
 
   if (error) alert("Could not post comment: " + error.message);
-  else await loadPosts(targetId, ownOnly);
+  else loadPosts(targetId, ownOnly);
 }
 
 async function uploadImage() {
@@ -1021,7 +1025,6 @@ async function uploadImage() {
     $("captionInput").value = "";
     $("privacyInput").value = "public";
     $("uploadStatus").textContent = isVid ? "Your 1080p video is now live!" : "Your photo is now live!";
-    await loadPosts("myGallery", false);
   }
 
   $("uploadButton").disabled = false;
@@ -1058,8 +1061,6 @@ function setView(view) {
     }
     loadProfile();
     loadPosts("profileGallery", true);
-  } else {
-    loadPosts("myGallery", false);
   }
 }
 
@@ -1078,8 +1079,6 @@ async function updateAuthUI() {
     await loadFriendsView();
   } else if (activeView === "profile" && currentUser) {
     await loadPosts("profileGallery", true);
-  } else {
-    await loadPosts("myGallery", false);
   }
 }
 
@@ -1102,11 +1101,11 @@ $("exploreModal").addEventListener("click", event => {
 });
 
 $("confirmModal").addEventListener("click", event => {
-  if (event.target === $("confirmModal")) $("confirmModal").classList.add("hidden");
+  if (event.target === $("confirmModal")) $("confirmModal"].classList.add("hidden");
 });
 
 $("editModal").addEventListener("click", event => {
-  if (event.target === $("editModal")) $("editModal").classList.add("hidden");
+  if (event.target === $("editModal")) $("editModal"].classList.add("hidden");
 });
 
 $("saveProfileButton").addEventListener("click", saveProfile);
