@@ -85,9 +85,12 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .btn-danger{background:#fee2e2;color:#dc2626}
 .btn-danger:hover{background:#fca5a5}
 
-/* DESCRIPTIVE FLOATING APP ICON */
-.app-launcher-icon{position:fixed;bottom:25px;right:25px;background:linear-gradient(135deg, #536dfe, #4055d6);color:white;padding:10px 16px;border-radius:16px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(83,109,254,0.4);cursor:pointer;z-index:15;transition:transform 0.2s, box-shadow 0.2s;font-weight:600;font-size:14px}
-.app-launcher-icon:hover{transform:translateY(-3px);box-shadow:0 8px 25px rgba(83,109,254,0.6)}
+/* FLOATING APP LAUNCHER & QUICK EXPLORE CONTAINER */
+.bottom-floating-bar{position:fixed;bottom:25px;right:25px;display:flex;align-items:center;gap:12px;z-index:15}
+.explore-quick-btn{background:rgba(255,255,255,0.95);color:#182230;padding:12px 18px;border-radius:16px;box-shadow:0 4px 15px rgba(0,0,0,0.2);cursor:pointer;font-weight:600;font-size:14px;border:1px solid #e7eaf1;transition:transform 0.2s}
+.explore-quick-btn:hover{transform:translateY(-2px);background:white}
+.app-launcher-icon{background:linear-gradient(135deg, #536dfe, #4055d6);color:white;padding:10px 16px;border-radius:16px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(83,109,254,0.4);cursor:pointer;transition:transform 0.2s, box-shadow 0.2s;font-weight:600;font-size:14px}
+.app-launcher-icon:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(83,109,254,0.6)}
 .app-launcher-icon .app-icon-badge{background:white;color:#536dfe;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
 
 /* APP DRAWER MODAL WINDOW */
@@ -107,10 +110,13 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 </header>
 
 <main>
-  <!-- GUIDED FLOATING APP LAUNCHER -->
-  <div id="openAppDrawerBtn" class="app-launcher-icon" title="Open CloudGallery App Menu">
-    <div class="app-icon-badge">☁️</div>
-    <span>CloudGallery App</span>
+  <!-- FLOATING BOTTOM BAR (EXPLORE BUTTON + APP LAUNCHER) -->
+  <div class="bottom-floating-bar">
+    <button id="openExploreButton" class="explore-quick-btn">🌍 Explore World Media</button>
+    <div id="openAppDrawerBtn" class="app-launcher-icon" title="Open CloudGallery App Menu">
+      <div class="app-icon-badge">☁️</div>
+      <span>CloudGallery App</span>
+    </div>
   </div>
 
   <section id="gallerySection">
@@ -1025,10 +1031,21 @@ async function uploadImage() {
     $("captionInput").value = "";
     $("privacyInput").value = "public";
     $("uploadStatus").textContent = isVid ? "Your 1080p video is now live!" : "Your photo is now live!";
-    await loadPosts("myGallery", false);
+    loadPosts("myGallery", false);
   }
 
   $("uploadButton").disabled = false;
+}
+
+function openExplore() {
+  $("exploreModal").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+  loadPosts("exploreGallery", false);
+}
+
+function closeExplore() {
+  $("exploreModal").classList.add("hidden");
+  document.body.style.overflow = "";
 }
 
 function setView(view) {
@@ -1087,6 +1104,12 @@ $("signOutButton").addEventListener("click", async () => {
 });
 
 $("uploadButton").addEventListener("click", uploadImage);
+$("openExploreButton").addEventListener("click", openExplore);
+$("closeExploreButton").addEventListener("click", closeExplore);
+
+$("exploreModal").addEventListener("click", event => {
+  if (event.target === $("exploreModal")) closeExplore();
+});
 
 $("confirmModal").addEventListener("click", event => {
   if (event.target === $("confirmModal")) $("confirmModal").classList.add("hidden");
