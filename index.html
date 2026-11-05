@@ -130,12 +130,15 @@ main{max-width:1150px;margin:35px auto;padding:20px}
       </div>
     </section>
 
+    <!-- NAVIGATION TABS -->
     <nav class="tabs">
       <button class="tab active" data-view="gallery">My Online Gallery</button>
       <button class="tab" data-view="friends">👥 Friends</button>
-      <button class="tab" data-view="profile">My Profile</button>
+      <button class="tab" data-view="profile">👤 Profile</button>
+      <button class="tab" data-view="settings">⚙️ Setting</button>
     </nav>
 
+    <!-- UPLOAD PANEL -->
     <section id="uploadPanel" class="section" style="border:1px solid #e7eaf1">
       <h2>Upload media (Photos or HD Videos)</h2>
       <p class="muted">Share files with the CloudGallery community (Videos up to 100MB).</p>
@@ -153,6 +156,7 @@ main{max-width:1150px;margin:35px auto;padding:20px}
       <p id="uploadStatus" class="status"></p>
     </section>
 
+    <!-- FRIENDS SECTION -->
     <section id="friendsSection" class="section hidden">
       <h2>👥 Community & Friends</h2>
       <p class="muted">Connect with members to view their "Friends Only" photos and videos.</p>
@@ -174,6 +178,7 @@ main{max-width:1150px;margin:35px auto;padding:20px}
       </div>
     </section>
 
+    <!-- PROFILE SECTION (CLEANED UP - UPLOADS ONLY) -->
     <section id="profileSection" class="section hidden">
       <div class="profile-header">
         <img id="profileAvatar" class="avatar" alt="Profile">
@@ -183,7 +188,16 @@ main{max-width:1150px;margin:35px auto;padding:20px}
         </div>
       </div>
 
-      <label class="muted" style="display:block;margin-top:12px;font-size:13px;font-weight:600">Display name</label>
+      <h3 style="margin-top:20px">My Uploads</h3>
+      <div id="profileGallery" class="gallery" style="margin-top:15px"></div>
+    </section>
+
+    <!-- SETTINGS SECTION (NEW) -->
+    <section id="settingsSection" class="section hidden">
+      <h2>⚙️ App & Profile Settings</h2>
+      <p class="muted">Customize your profile display name, theme appearance, and launcher icon.</p>
+
+      <label class="muted" style="display:block;margin-top:15px;font-size:13px;font-weight:600">Display name</label>
       <input id="displayName" maxlength="40" placeholder="Your display name" style="margin-top:5px">
 
       <label class="muted" style="display:block;margin-top:15px;font-size:13px;font-weight:600">Upload New Avatar Image</label>
@@ -208,9 +222,6 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 
       <button id="saveProfileButton" style="margin-top:20px">Save Profile & Theme</button>
       <p id="profileStatus" class="status"></p>
-
-      <h3 style="margin-top:30px">My Uploads</h3>
-      <div id="profileGallery" class="gallery" style="margin-top:15px"></div>
     </section>
   </div>
 </div>
@@ -1085,6 +1096,7 @@ function setView(view) {
   $("uploadPanel").classList.toggle("hidden", view !== "gallery");
   $("friendsSection").classList.toggle("hidden", view !== "friends");
   $("profileSection").classList.toggle("hidden", view !== "profile");
+  $("settingsSection").classList.toggle("hidden", view !== "settings");
 
   if (view === "friends") {
     loadFriendsView();
@@ -1095,6 +1107,12 @@ function setView(view) {
     }
     loadProfile();
     loadPosts("profileGallery", true);
+  } else if (view === "settings") {
+    if (!currentUser) {
+      showLogin();
+      return;
+    }
+    loadProfile();
   }
 }
 
@@ -1112,7 +1130,10 @@ async function updateAuthUI() {
   if (activeView === "friends") {
     await loadFriendsView();
   } else if (activeView === "profile" && currentUser) {
+    loadProfile();
     await loadPosts("profileGallery", true);
+  } else if (activeView === "settings" && currentUser) {
+    loadProfile();
   }
 }
 
