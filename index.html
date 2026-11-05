@@ -27,7 +27,7 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .muted{color:#718096;font-size:14px}
 .section{background:white;border:1px solid #e7eaf1;border-radius:15px;padding:22px;margin-bottom:25px}
 .section h2{margin-bottom:12px}
-.tabs{display:flex;gap:10px;margin:20px 0}
+.tabs{display:flex;gap:10px;margin:20px 0;flex-wrap:wrap}
 .tab{background:transparent;color:#68738a}
 .tab.active{background:#e9ecff;color:#4055d6}
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
@@ -58,6 +58,10 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .comment-form{display:flex;gap:6px;margin-top:10px}
 .comment-form input{min-width:0;padding:8px 12px;font-size:13px}
 .comment-form button{padding:8px 14px;font-size:13px;border-radius:20px}
+.user-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:15px;margin-top:15px}
+.user-card{background:white;border:1px solid #e7eaf1;border-radius:12px;padding:15px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.user-card .avatar{width:55px;height:55px}
+.btn-sm{padding:7px 12px;font-size:13px}
 .empty{background:white;border:1px dashed #ccd3e2;border-radius:13px;padding:35px;text-align:center;color:#718096;grid-column:1/-1}
 .status{margin-top:12px;color:#64748b;font-size:13px;min-height:18px}
 .profile-header{display:flex;align-items:center;gap:15px;margin-bottom:18px}
@@ -112,6 +116,7 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 
   <nav class="tabs">
     <button class="tab active" data-view="gallery">My Online Gallery</button>
+    <button class="tab" data-view="friends">👥 Friends</button>
     <button class="tab" data-view="profile">My Profile</button>
   </nav>
 
@@ -139,6 +144,28 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
     </div>
     <div id="myGallery" class="gallery">
       <div class="empty">Loading gallery...</div>
+    </div>
+  </section>
+
+  <!-- FRIENDS SECTION -->
+  <section id="friendsSection" class="section hidden">
+    <h2>👥 Community & Friends</h2>
+    <p class="muted">Connect with members to view their "Friends Only" photos and videos.</p>
+    
+    <div style="margin-top:20px">
+      <h3>Pending Friend Requests</h3>
+      <div id="pendingRequestsGrid" class="user-card-grid"></div>
+    </div>
+
+    <div style="margin-top:30px">
+      <h3>Your Friends</h3>
+      <div id="friendsListGrid" class="user-card-grid"></div>
+    </div>
+
+    <div style="margin-top:30px">
+      <h3>Discover Community Members</h3>
+      <input id="searchUsersInput" placeholder="Search users by name..." style="margin-top:10px;margin-bottom:15px">
+      <div id="allUsersGrid" class="user-card-grid"></div>
     </div>
   </section>
 
@@ -374,6 +401,140 @@ async function saveProfile() {
   }
 }
 
+/* FRIENDS SYSTEM FUNCTIONS */
+async function loadFriendsView() {
+  if (!currentUser) {
+    showLogin();
+    return;
+  }
+
+  const pendingGrid = $("pendingRequestsGrid");
+  const friendsGrid = $("friendsListGrid");
+  const usersGrid = $("allUsersGrid");
+
+  pendingGrid.innerHTML = '<div class="empty">Loading requests...</div>';
+  friendsGrid.innerHTML = '<div class="empty">Loading friends...</div>';
+  usersGrid.innerHTML = '<div class="empty">Loading community members...</div>';
+
+  const { data: friendships, error: friendErr } = await db
+    .from("friends")
+    .select("*")
+    .or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`);
+
+  if (friendErr) {
+    console.error("Fetch friendships error:", friendErr);
+    return;
+  }
+
+  const { data: allProfiles, error: profErr } = await db
+    .from("profiles")
+    .select("id,display_name,avatar_url");
+
+  if (profErr) return;
+
+  const profileMap = {};
+  (allProfiles || []).forEach(p => profileMap[p.id] = p);
+
+  // 1. Pending Requests (Incoming)
+  const incomingRequests = (friendships || []).filter(
+    f => f.friend_id === currentUser.id && f.status === "pending"
+  );
+
+  pendingGrid.innerHTML = incomingRequests.length ? incomingRequests.map(f => {
+    const p = profileMap[f.user_id] || {};
+    return `
+      <div class="user-card">
+        <img class="avatar" src="${escapeHTML(p.avatar_url || fallbackAvatar)}" alt="Avatar">
+        <strong>${escapeHTML(p.display_name || "CloudGallery user")}</strong>
+        <div style="display:flex;gap:6px">
+          <button class="btn-sm" onclick="acceptFriendRequest('${f.id}')">Accept</button>
+          <button class="btn-sm btn-danger" onclick="removeFriendship('${f.id}')">Decline</button>
+        </div>
+      </div>
+    `;
+  }).join("") : '<div class="empty">No pending friend requests.</div>';
+
+  // 2. Active Friends
+  const activeFriends = (friendships || []).filter(f => f.status === "accepted");
+  
+  friendsGrid.innerHTML = activeFriends.length ? activeFriends.map(f => {
+    const friendId = f.user_id === currentUser.id ? f.friend_id : f.user_id;
+    const p = profileMap[friendId] || {};
+    return `
+      <div class="user-card">
+        <img class="avatar" src="${escapeHTML(p.avatar_url || fallbackAvatar)}" alt="Avatar">
+        <strong>${escapeHTML(p.display_name || "CloudGallery user")}</strong>
+        <button class="btn-sm btn-danger" onclick="removeFriendship('${f.id}')">Unfriend</button>
+      </div>
+    `;
+  }).join("") : '<div class="empty">You haven\'t added any friends yet.</div>';
+
+  // 3. Community Members
+  const searchFilter = $("searchUsersInput").value.toLowerCase().trim();
+  const otherUsers = (allProfiles || []).filter(p => p.id !== currentUser.id &&
+    (!searchFilter || (p.display_name || "").toLowerCase().includes(searchFilter))
+  );
+
+  usersGrid.innerHTML = otherUsers.length ? otherUsers.map(p => {
+    const existingRel = (friendships || []).find(
+      f => (f.user_id === currentUser.id && f.friend_id === p.id) ||
+           (f.friend_id === currentUser.id && f.user_id === p.id)
+    );
+
+    let actionButtonHtml = "";
+    if (!existingRel) {
+      actionButtonHtml = `<button class="btn-sm" onclick="sendFriendRequest('${p.id}')">➕ Add Friend</button>`;
+    } else if (existingRel.status === "pending") {
+      if (existingRel.user_id === currentUser.id) {
+        actionButtonHtml = `<button class="btn-sm btn-secondary" disabled>Request Sent</button>`;
+      } else {
+        actionButtonHtml = `<button class="btn-sm" onclick="acceptFriendRequest('${existingRel.id}')">Accept</button>`;
+      }
+    } else {
+      actionButtonHtml = `<button class="btn-sm btn-secondary" disabled>✓ Friends</button>`;
+    }
+
+    return `
+      <div class="user-card">
+        <img class="avatar" src="${escapeHTML(p.avatar_url || fallbackAvatar)}" alt="Avatar">
+        <strong>${escapeHTML(p.display_name || "CloudGallery user")}</strong>
+        ${actionButtonHtml}
+      </div>
+    `;
+  }).join("") : '<div class="empty">No other users found.</div>';
+}
+
+async function sendFriendRequest(targetUserId) {
+  if (!currentUser) return showLogin();
+  const { error } = await db.from("friends").insert({
+    user_id: currentUser.id,
+    friend_id: targetUserId,
+    status: "pending"
+  });
+  if (error) alert("Could not send friend request: " + error.message);
+  else loadFriendsView();
+}
+
+async function acceptFriendRequest(friendshipId) {
+  if (!currentUser) return showLogin();
+  const { error } = await db.from("friends")
+    .update({ status: "accepted" })
+    .eq("id", friendshipId);
+  if (error) alert("Could not accept request: " + error.message);
+  else loadFriendsView();
+}
+
+async function removeFriendship(friendshipId) {
+  if (!currentUser) return showLogin();
+  const { error } = await db.from("friends")
+    .delete()
+    .eq("id", friendshipId);
+  if (error) alert("Could not update friendship: " + error.message);
+  else loadFriendsView();
+}
+
+$("searchUsersInput").addEventListener("input", loadFriendsView);
+
 async function loadPosts(targetId, ownOnly = false) {
   const target = $(targetId);
   target.innerHTML = '<div class="empty">Loading media feed...</div>';
@@ -389,12 +550,6 @@ async function loadPosts(targetId, ownOnly = false) {
       return;
     }
     query = query.eq("user_id", currentUser.id);
-  } else {
-    if (currentUser) {
-      query = query.in("privacy", ["public", "friends"]);
-    } else {
-      query = query.eq("privacy", "public");
-    }
   }
 
   const { data: posts, error } = await query;
@@ -581,7 +736,6 @@ function openEditModal(postId, caption, privacy, targetId, ownOnly) {
   $("editStatus").textContent = "";
   $("editModal").classList.remove("hidden");
 
-  // Save handler attachment helper
   const saveBtn = $("saveEditBtn");
   const newSaveBtn = saveBtn.cloneNode(true);
   saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
@@ -757,7 +911,7 @@ async function uploadImage() {
     $("captionInput").value = "";
     $("privacyInput").value = "public";
     $("uploadStatus").textContent = isVid ? "Your 1080p video is now live!" : "Your photo is now live!";
-    await loadPosts("myGallery", true);
+    await loadPosts("myGallery", false);
   }
 
   $("uploadButton").disabled = false;
@@ -782,10 +936,13 @@ function setView(view) {
   );
 
   $("gallerySection").classList.toggle("hidden", view !== "gallery");
+  $("friendsSection").classList.toggle("hidden", view !== "friends");
   $("profileSection").classList.toggle("hidden", view !== "profile");
   $("uploadPanel").style.display = view === "gallery" && currentUser ? "block" : "none";
 
-  if (view === "profile") {
+  if (view === "friends") {
+    loadFriendsView();
+  } else if (view === "profile") {
     if (!currentUser) {
       showLogin();
       return;
@@ -793,7 +950,7 @@ function setView(view) {
     loadProfile();
     loadPosts("profileGallery", true);
   } else {
-    loadPosts("myGallery", true);
+    loadPosts("myGallery", false);
   }
 }
 
@@ -810,10 +967,12 @@ async function updateAuthUI() {
 
   if (currentUser) await loadProfile();
 
-  await loadPosts("myGallery", true);
-
-  if (activeView === "profile" && currentUser) {
+  if (activeView === "friends") {
+    await loadFriendsView();
+  } else if (activeView === "profile" && currentUser) {
     await loadPosts("profileGallery", true);
+  } else {
+    await loadPosts("myGallery", false);
   }
 }
 
