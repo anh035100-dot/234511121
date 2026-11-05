@@ -118,12 +118,6 @@ main{max-width:1150px;margin:35px auto;padding:20px}
       <span>CloudGallery App</span>
     </div>
   </div>
-
-  <section id="gallerySection">
-    <div id="myGallery" class="gallery hidden">
-      <div class="empty">Loading gallery...</div>
-    </div>
-  </section>
 </main>
 
 <!-- APP DRAWER POPUP MODAL (CONTAINS ALL TABS & UPLOAD CONTROLS) -->
@@ -921,7 +915,7 @@ async function deletePost(postId, storagePath, targetId, ownOnly) {
       }
     }
 
-    await loadPosts(targetId, ownOnly);
+    loadPosts(targetId, ownOnly);
 
   } catch (err) {
     alert("Error deleting media: " + err.message);
@@ -948,7 +942,7 @@ async function toggleLike(postId, targetId, ownOnly) {
       });
 
   if (result.error) alert("Could not update like: " + result.error.message);
-  await loadPosts(targetId, ownOnly);
+  loadPosts(targetId, ownOnly);
 }
 
 async function addComment(event, postId, targetId, ownOnly) {
@@ -966,7 +960,7 @@ async function addComment(event, postId, targetId, ownOnly) {
   });
 
   if (error) alert("Could not post comment: " + error.message);
-  else await loadPosts(targetId, ownOnly);
+  else loadPosts(targetId, ownOnly);
 }
 
 async function uploadImage() {
@@ -1031,7 +1025,6 @@ async function uploadImage() {
     $("captionInput").value = "";
     $("privacyInput").value = "public";
     $("uploadStatus").textContent = isVid ? "Your 1080p video is now live!" : "Your photo is now live!";
-    loadPosts("myGallery", false);
   }
 
   $("uploadButton").disabled = false;
@@ -1068,8 +1061,6 @@ function setView(view) {
     }
     loadProfile();
     loadPosts("profileGallery", true);
-  } else {
-    loadPosts("myGallery", false);
   }
 }
 
@@ -1088,8 +1079,6 @@ async function updateAuthUI() {
     await loadFriendsView();
   } else if (activeView === "profile" && currentUser) {
     await loadPosts("profileGallery", true);
-  } else {
-    loadPosts("myGallery", false);
   }
 }
 
