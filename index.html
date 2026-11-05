@@ -22,14 +22,16 @@ header h1{color:#536dfe;font-size:25px}
 .header-right{display:flex;align-items:center;gap:12px}
 .avatar{width:35px;height:35px;border-radius:50%;object-fit:cover;background:#e9ecff}
 main{max-width:1150px;margin:35px auto;padding:20px}
-.hero{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:30px;background:rgba(255,255,255,0.9);padding:20px;border-radius:15px;border:1px solid #e7eaf1}
-.hero h2{font-size:34px;margin-bottom:10px}
+.hero{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:20px;background:rgba(255,255,255,0.9);padding:20px;border-radius:15px;border:1px solid #e7eaf1}
+.hero h2{font-size:26px;margin-bottom:8px}
 .muted{color:#718096;font-size:14px}
 .section{background:rgba(255,255,255,0.95);border:1px solid #e7eaf1;border-radius:15px;padding:22px;margin-bottom:25px;box-shadow:0 4px 6px rgba(0,0,0,0.02)}
 .section h2{margin-bottom:12px}
-.tabs{display:flex;gap:10px;margin:20px 0;flex-wrap:wrap}
+.tabs{display:flex;gap:10px;margin:15px 0;flex-wrap:wrap;align-items:center}
 .tab{background:rgba(255,255,255,0.8);color:#68738a}
 .tab.active{background:#e9ecff;color:#4055d6}
+.app-drawer-btn{background:#10b981;color:white;display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;font-weight:600;cursor:pointer;border:0;transition:background 0.2s}
+.app-drawer-btn:hover{background:#059669}
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
 .photo{background:white;border:1px solid #e7eaf1;border-radius:14px;overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,0.02);position:relative}
 .media-container{position:relative;width:100%;height:240px;background:#000}
@@ -84,11 +86,10 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .btn-secondary:hover{background:#e0e4ff}
 .btn-danger{background:#fee2e2;color:#dc2626}
 .btn-danger:hover{background:#fca5a5}
-#uploadPanel{display:none}
 footer{text-align:center;padding:30px;color:#94a3b8;background:rgba(255,255,255,0.8);margin-top:40px}
 @media(max-width:650px){
 header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
-.hero h2{font-size:27px}main{margin:15px auto;padding:12px}
+.hero h2{font-size:22px}main{margin:15px auto;padding:12px}
 .gallery{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}
 .media-container{height:175px}.section{padding:15px}
 }
@@ -107,20 +108,24 @@ header{padding:15px}.hero{align-items:flex-start;flex-direction:column}
 </header>
 
 <main>
-  <section class="hero">
+  <!-- COLLAPSIBLE HERO / BANNER -->
+  <section id="heroSection" class="hero hidden">
     <div>
       <h2>Your photos & 1080p videos, everywhere.</h2>
       <p class="muted">Upload, store and stream your favorite content in high definition.</p>
     </div>
+    <button id="closeHeroBtn" class="btn-secondary" style="padding:6px 12px;font-size:12px">✕ Hide</button>
   </section>
 
   <nav class="tabs">
     <button class="tab active" data-view="gallery">My Online Gallery</button>
     <button class="tab" data-view="friends">👥 Friends</button>
     <button class="tab" data-view="profile">My Profile</button>
+    <button id="toggleAppDrawerBtn" class="app-drawer-btn hidden">📱 <span>Open App Menu</span></button>
   </nav>
 
-  <section id="uploadPanel" class="section">
+  <!-- UPLOAD PANEL (COLLAPSED BY DEFAULT / TOGGLEABLE) -->
+  <section id="uploadPanel" class="section hidden">
     <h2>Upload media (Photos or HD Videos)</h2>
     <p class="muted">Share files with the CloudGallery community (Videos up to 100MB).</p>
     <input type="file" id="fileInput" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime" style="margin-top:15px">
@@ -287,6 +292,7 @@ let currentUser = null;
 let currentProfile = null;
 let activeView = "gallery";
 let editingPostId = null;
+let isDrawerOpen = false;
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -425,7 +431,6 @@ async function saveProfile() {
   const bgFile = $("bgFileInput").files[0];
 
   try {
-    // Upload avatar if selected
     if (avatarFile) {
       const safeName = avatarFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const path = `${currentUser.id}/avatar-${crypto.randomUUID()}-${safeName}`;
@@ -435,7 +440,6 @@ async function saveProfile() {
       avatar_url = pub.publicUrl;
     }
 
-    // Upload background image if selected
     if (bgFile) {
       const safeName = bgFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const path = `${currentUser.id}/bg-${crypto.randomUUID()}-${safeName}`;
@@ -493,6 +497,22 @@ $("clearBgBtn").addEventListener("click", async () => {
   }
 });
 
+/* APP DRAWER TOGGLE LOGIC */
+function toggleAppDrawer() {
+  isDrawerOpen = !isDrawerOpen;
+  $("heroSection").classList.toggle("hidden", !isDrawerOpen);
+  $("uploadPanel").classList.toggle("hidden", !isDrawerOpen || activeView !== "gallery");
+  $("toggleAppDrawerBtn").querySelector("span").textContent = isDrawerOpen ? "Close Menu" : "Open App Menu";
+}
+
+$("toggleAppDrawerBtn").addEventListener("click", toggleAppDrawer);
+$("closeHeroBtn").addEventListener("click", () => {
+  isDrawerOpen = false;
+  $("heroSection").classList.add("hidden");
+  $("uploadPanel").classList.add("hidden");
+  $("toggleAppDrawerBtn").querySelector("span").textContent = "Open App Menu";
+});
+
 /* FRIENDS SYSTEM FUNCTIONS */
 async function loadFriendsView() {
   if (!currentUser) {
@@ -527,7 +547,6 @@ async function loadFriendsView() {
   const profileMap = {};
   (allProfiles || []).forEach(p => profileMap[p.id] = p);
 
-  // 1. Pending Requests (Incoming)
   const incomingRequests = (friendships || []).filter(
     f => f.friend_id === currentUser.id && f.status === "pending"
   );
@@ -546,7 +565,6 @@ async function loadFriendsView() {
     `;
   }).join("") : '<div class="empty">No pending friend requests.</div>';
 
-  // 2. Active Friends
   const activeFriends = (friendships || []).filter(f => f.status === "accepted");
   
   friendsGrid.innerHTML = activeFriends.length ? activeFriends.map(f => {
@@ -561,7 +579,6 @@ async function loadFriendsView() {
     `;
   }).join("") : '<div class="empty">You haven\'t added any friends yet.</div>';
 
-  // 3. Community Members
   const searchFilter = $("searchUsersInput").value.toLowerCase().trim();
   const otherUsers = (allProfiles || []).filter(p => p.id !== currentUser.id &&
     (!searchFilter || (p.display_name || "").toLowerCase().includes(searchFilter))
@@ -1030,7 +1047,12 @@ function setView(view) {
   $("gallerySection").classList.toggle("hidden", view !== "gallery");
   $("friendsSection").classList.toggle("hidden", view !== "friends");
   $("profileSection").classList.toggle("hidden", view !== "profile");
-  $("uploadPanel").style.display = view === "gallery" && currentUser ? "block" : "none";
+  
+  // Keep upload panel hidden by default until toggled via app drawer button
+  $("uploadPanel").classList.add("hidden");
+  isDrawerOpen = false;
+  $("toggleAppDrawerBtn").querySelector("span").textContent = "Open App Menu";
+  $("toggleAppDrawerBtn").classList.toggle("hidden", view !== "gallery");
 
   if (view === "friends") {
     loadFriendsView();
@@ -1055,7 +1077,7 @@ async function updateAuthUI() {
     ? (currentUser.user_metadata?.full_name || currentUser.email || "Signed in")
     : "Not signed in";
 
-  $("uploadPanel").style.display = currentUser && activeView === "gallery" ? "block" : "none";
+  $("toggleAppDrawerBtn").classList.toggle("hidden", !currentUser || activeView !== "gallery");
 
   if (currentUser) await loadProfile();
 
@@ -1088,11 +1110,11 @@ $("exploreModal").addEventListener("click", event => {
 });
 
 $("confirmModal").addEventListener("click", event => {
-  if (event.target === $("confirmModal")) $("confirmModal").classList.add("hidden");
+  if (event.target === $("confirmModal")) $("confirmModal"].classList.add("hidden");
 });
 
 $("editModal").addEventListener("click", event => {
-  if (event.target === $("editModal")) $("editModal").classList.add("hidden");
+  if (event.target === $("editModal")) $("editModal"].classList.add("hidden");
 });
 
 $("saveProfileButton").addEventListener("click", saveProfile);
