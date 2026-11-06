@@ -141,7 +141,7 @@ main{max-width:1150px;margin:35px auto;padding:20px}
     <!-- UPLOAD PANEL -->
     <section id="uploadPanel" class="section" style="border:1px solid #e7eaf1">
       <h2>Upload media (Photos or HD Videos)</h2>
-      <p class="muted">Share files with the CloudGallery community (Videos up to 100MB).</p>
+      <p class="muted">Share files with the CloudGallery community (Videos up to &lt;100MB).</p>
       <input type="file" id="fileInput" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime" style="margin-top:15px">
       <input id="captionInput" maxlength="300" placeholder="Write a caption (optional)" style="margin-top:12px">
       
@@ -178,7 +178,7 @@ main{max-width:1150px;margin:35px auto;padding:20px}
       </div>
     </section>
 
-    <!-- PROFILE SECTION (UPLOADS ONLY) -->
+    <!-- PROFILE SECTION -->
     <section id="profileSection" class="section hidden">
       <div class="profile-header">
         <img id="profileAvatar" class="avatar" alt="Profile">
@@ -1030,12 +1030,12 @@ async function uploadImage() {
 
   const maxMB = isVid ? 100 : 10;
   if (file.size > maxMB * 1024 * 1024) {
-    $("uploadStatus").textContent = "File must be smaller than " + maxMB + " MB.";
+    $("uploadStatus").textContent = "File must be smaller than <100MB.";
     return;
   }
 
   $("uploadButton").disabled = true;
-  $("uploadStatus").textContent = isVid ? "Uploading HD video (up to 100MB)..." : "Uploading image...";
+  $("uploadStatus").textContent = isVid ? "Uploading HD video (up to <100MB)..." : "Uploading image...";
 
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = currentUser.id + "/" + crypto.randomUUID() + "-" + safeName;
