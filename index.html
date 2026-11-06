@@ -43,20 +43,28 @@ main{max-width:1150px;margin:35px auto;padding:20px}
 .photo-user .avatar{width:29px;height:29px}
 .privacy-badge{font-size:11px;padding:3px 7px;border-radius:6px;background:#f1f5f9;color:#475569;font-weight:600;white-space:nowrap}
 .caption{margin:10px 0;overflow-wrap:anywhere}
-.actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
-.like{background:#fff0f3;color:#d33b65;padding:8px 12px}
-.like:hover{background:#ffe1e7}
-.like.liked{background:#ffdce6;color:#b01d46}
-.comment-button{background:#eef0ff;color:#4055d6;padding:8px 12px;cursor:default}
+.actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;position:relative}
+
+/* Reaction & Heart styling */
+.reaction-container{position:relative;display:inline-block}
+.reaction-trigger{background:#fff0f3;color:#d33b65;padding:8px 14px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px}
+.reaction-trigger:hover{background:#ffe1e7}
+.reaction-popup{position:absolute;bottom:115%;left:0;background:white;border:1px solid #e7eaf1;box-shadow:0 8px 20px rgba(0,0,0,0.12);border-radius:30px;padding:6px 10px;display:flex;gap:8px;z-index:10;white-space:nowrap}
+.reaction-option{background:none;border:none;font-size:20px;cursor:pointer;padding:4px;border-radius:50%;transition:transform 0.15s}
+.reaction-option:hover{transform:scale(1.3);background:#f1f5f9}
+
+.comment-toggle-btn{background:#eef0ff;color:#4055d6;padding:8px 14px}
+.comment-toggle-btn:hover{background:#e0e4ff}
 .edit-btn{background:#eef0ff;color:#4055d6;padding:8px 12px}
 .edit-btn:hover{background:#e0e4ff}
 .delete-btn{background:#fee2e2;color:#dc2626;padding:8px 12px}
 .delete-btn:hover{background:#fca5a5}
 .comments{border-top:1px solid #eee;margin-top:12px;padding-top:10px}
 .comment{font-size:13px;margin:8px 0;overflow-wrap:anywhere}
-.comment-form{display:flex;gap:6px;margin-top:10px}
+.comment-form{display:flex;align-items:center;gap:8px;margin-top:10px}
+.comment-form .avatar{width:30px;height:30px;flex-shrink:0}
 .comment-form input{min-width:0;padding:8px 12px;font-size:13px}
-.comment-form button{padding:8px 14px;font-size:13px;border-radius:20px}
+.comment-form button{padding:8px 14px;font-size:13px;border-radius:10px}
 .user-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:15px;margin-top:15px}
 .user-card{background:white;border:1px solid #e7eaf1;border-radius:12px;padding:15px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
 .user-card .avatar{width:55px;height:55px}
@@ -803,6 +811,7 @@ async function loadPosts(targetId, ownOnly) {
     const isVid = post.media_type === "video" || isVideoUrl(post.image_url);
 
     const privacyBadgeText = post.privacy === "friends" ? "👥 Friends" : (post.privacy === "private" ? "🔒 Private" : "🌐 Public");
+    const userAvatarUrl = (currentProfile && currentProfile.avatar_url) || (currentUser && currentUser.user_metadata && currentUser.user_metadata.avatar_url) || fallbackAvatar;
 
     const article = document.createElement("article");
     article.className = "photo";
@@ -845,21 +854,51 @@ async function loadPosts(targetId, ownOnly) {
         (post.caption ? '<p class="caption">' + escapeHTML(post.caption) + '</p>' : '') +
         '<p class="muted">' + new Date(post.created_at).toLocaleDateString() + '</p>' +
         '<div class="actions">' +
-          '<button class="like ' + (liked ? "liked" : "") + '" id="like-btn-' + post.id + '">♥ ' + postLikes.length + '</button>' +
-          '<button class="comment-button">Comments (' + postComments.length + ')</button>' +
+          '<div class="reaction-container" id="react-container-' + post.id + '">' +
+            '<div class="reaction-trigger" id="react-trigger-' + post.id + '">❤️ ' + postLikes.length + '</div>' +
+            '<div class="reaction-popup hidden" id="react-popup-' + post.id + '">' +
+              '<button class="reaction-option" data-emoji="❤️">❤️</button>' +
+              '<button class="reaction-option" data-emoji="👍">👍</button>' +
+              '<button class="reaction-option" data-emoji="😂">😂</button>' +
+              '<button class="reaction-option" data-emoji="🔥">🔥</button>' +
+              '<button class="reaction-option" data-emoji="😮">😮</button>' +
+              '<button class="reaction-option" data-emoji="😢">😢</button>' +
+            '</div>' +
+          '</div>' +
+          '<button class="comment-toggle-btn" id="comment-toggle-' + post.id + '">💬 Comments (' + postComments.length + ')</button>' +
           (isOwner ? '<button class="edit-btn" id="edit-btn-' + post.id + '">✏️ Edit</button><button class="delete-btn" id="del-btn-' + post.id + '">🗑 Delete</button>' : '') +
         '</div>' +
-        '<div class="comments">' +
+        '<div class="comments hidden" id="comments-section-' + post.id + '">' +
           commentsListHtml +
           '<form class="comment-form" id="comment-form-' + post.id + '">' +
+            '<img class="avatar" src="' + escapeHTML(userAvatarUrl) + '" alt="My Avatar">' +
             '<input name="content" maxlength="500" placeholder="' + (currentUser ? "Write a comment..." : "Sign in to comment") + '" ' + (currentUser ? "" : "disabled") + '>' +
             '<button type="submit" ' + (currentUser ? "" : "disabled") + '>Send</button>' +
           '</form>' +
         '</div>' +
       '</div>';
 
-    article.querySelector("#like-btn-" + post.id).addEventListener("click", function() {
-      toggleLike(post.id, targetId, ownOnly);
+    // Emoji reaction popup logic
+    const triggerEl = article.querySelector("#react-trigger-" + post.id);
+    const popupEl = article.querySelector("#react-popup-" + post.id);
+
+    triggerEl.addEventListener("click", function(e) {
+      e.stopPropagation();
+      document.querySelectorAll(".reaction-popup").forEach(p => { if (p !== popupEl) p.classList.add("hidden"); });
+      popupEl.classList.toggle("hidden");
+    });
+
+    article.querySelectorAll(".reaction-option").forEach(btn => {
+      btn.addEventListener("click", function() {
+        popupEl.classList.add("hidden");
+        toggleLike(post.id, targetId, ownOnly);
+      });
+    });
+
+    // Toggle comment section visibility
+    article.querySelector("#comment-toggle-" + post.id).addEventListener("click", function() {
+      const commSec = article.querySelector("#comments-section-" + post.id);
+      commSec.classList.toggle("hidden");
     });
 
     if (isOwner) {
@@ -888,6 +927,11 @@ async function loadPosts(targetId, ownOnly) {
     target.appendChild(article);
   });
 }
+
+// Close reaction popups when clicking outside
+window.addEventListener("click", function() {
+  document.querySelectorAll(".reaction-popup").forEach(p => p.classList.add("hidden"));
+});
 
 function openEditModal(postId, caption, privacy, targetId, ownOnly) {
   editingPostId = postId;
@@ -986,7 +1030,7 @@ async function toggleLike(postId, targetId, ownOnly) {
         user_id: currentUser.id
       });
 
-  if (result.error) alert("Could not update like: " + result.error.message);
+  if (result.error) alert("Could not update reaction: " + result.error.message);
   loadPosts(targetId, ownOnly);
 }
 
